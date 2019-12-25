@@ -44,7 +44,10 @@ protected:
 	GLfloat* normArray = NULL;
 	bool bNormalImage;
 	double depthResolution;
-	static int viewSize;
+	static int viewHeight_;
+	static int viewWidth_;
+	bool persRender = false;
+	double intrinsic[4];
 public:
 	PanoramaRenderer() { dataNum = 0; bNormalImage = false; depthResolution = 20.0; };
 	void setDepthFarClip(double depthResolution_) { depthResolution = depthResolution_; }
@@ -79,8 +82,22 @@ public:
 	double getDepthFarClip() {
 		return depthResolution;
 	};
-	void createContext(int viewSize_);
-	static int getViewSize() { return viewSize; };
+	void createContext(int viewWidth_,int viewHeight_);
+	static void getViewSize(int& w, int &h) { w = viewWidth_; h = viewHeight_; };
+	void setPersRender(double cx,double cy,double fx,double fy) {
+		persRender=true; 
+		intrinsic[0] = cx;
+		intrinsic[1] = cy;
+		intrinsic[2] = fx;
+		intrinsic[3] = fy;
+	};
+	void getPersRender(double& cx, double& cy, double& fx, double& fy) {
+		cx = intrinsic[0];
+		cy = intrinsic[1];
+		fx = intrinsic[2];
+		fy = intrinsic[3];
+	};
+	bool isPers() { return persRender; };
 };
 
 #endif

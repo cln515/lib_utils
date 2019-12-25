@@ -12,8 +12,8 @@ void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int m
 void display_points(float*& vertex, unsigned int*& face, float*& reflectance, int meshNum, int vertNum);
 void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Vector3d& center, Matrix3d& rotMatrix);
 void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParameter);
-void Init(int viewSize, double depthResolution);
-
+void Init(int viewWidth, int viewHeight, double depthResolution);
+void InitPers(int viewWidth, int viewHeight, double depthResolution, double* intrinsic);
 
 void PanoramaRenderer::setData(float* vertex, unsigned int* face, float* reflectance, int vertNum, int meshnum) {
 	if (dataNum == 0) {
@@ -137,7 +137,7 @@ void PanoramaRenderer::render_dot(Vector3d& center, Matrix3d& viewDirection, int
 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewSize, depthResolution);
+	Init(viewWidth_, viewHeight_, depthResolution);
 	glGetIntegerv(GL_VIEWPORT, view);
 	for (int i = 0; i < dataNum; i++) {
 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
@@ -263,7 +263,7 @@ void PanoramaRenderer::render(Vector3d& center, Matrix3d& viewDirection, int vie
 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewSize, depthResolution);
+	Init(viewWidth_,viewHeight_, depthResolution);
 	glGetIntegerv(GL_VIEWPORT, view);
 	for (int i = 0; i < dataNum; i++) {
 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
@@ -402,25 +402,76 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 	//HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	//::wglMakeCurrent(_hdc_, _hrc);
 	GLint view[4];
-	Init(viewSize, depthResolution);
-	glGetIntegerv(GL_VIEWPORT, view);
-	for (int i = 0; i < dataNum; i++) {
-		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
-		float* vertexp = vertexPointers[i];
-		for (int j = 0; j < vtNumArray[i]; j++) {
-			Vector3d tp;
-			Vector3d pp;
-			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
 
-			sphericalTrans_renderer(tp, pp, cameraParam);
-			trsVert[j * 3] = (float)tp(0, 0);
-			trsVert[j * 3 + 1] = (float)tp(1, 0);
-			trsVert[j * 3 + 2] = (float)tp(2, 0);
-			//			cout<<tp<<endl;
+	if (persRender) {
+		InitPers(viewWidth_,viewHeight_, depthResolution,intrinsic);
+		glGetIntegerv(GL_VIEWPORT, view);
+		for (int i = 0; i < dataNum; i++) {
+			float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+			float* vertexp = vertexPointers[i];
+			for (int j = 0; j < vtNumArray[i]; j++) {
+				Vector3d tp;
+				Vector3d pp;
+				pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+
+				Vector4d pt_;
+				pt_ << pp(0), pp(1), pp(2), 1;
+				Vector4d tp_ = cameraParam * pt_;
+
+				trsVert[j * 3] = (float)tp_(0);
+				trsVert[j * 3 + 1] = (float)tp_(1);
+				trsVert[j * 3 + 2] = (float)tp_(2);
+
+			}
+
+			const GLfloat lightPos[] = { 0 , 0 , 0 , 1.0 };
+			const GLfloat lightCol[] = { 1 , 0 , 0 , 1.0 };
+
+
+				//float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+			glBegin(GL_TRIANGLES);
+			for (int j = 0; j < meshNumArray[i]; j++) {
+				int index1 = facePointers[i][j * 3];
+				int index2 = facePointers[i][j * 3 + 1];
+				int index3 = facePointers[i][j * 3 + 2];
+
+				glColor3ub(reflectancePointers[i][index1], reflectancePointers[i][index1], reflectancePointers[i][index1]);
+				glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
+				glColor3ub(reflectancePointers[i][index2], reflectancePointers[i][index2], reflectancePointers[i][index2]);
+				glVertex3f(trsVert[index2 * 3], trsVert[index2 * 3 + 1], trsVert[index2 * 3 + 2]);
+				glColor3ub(reflectancePointers[i][index3], reflectancePointers[i][index3], reflectancePointers[i][index3]);
+				glVertex3f(trsVert[index3 * 3], trsVert[index3 * 3 + 1], trsVert[index3 * 3 + 2]);
+				
+			}
+			glEnd();
+			
+			free(trsVert);
 		}
-		display(trsVert, facePointers[i], reflectancePointers[i], meshNumArray[i], vtNumArray[i]);
-		free(trsVert);
 	}
+	else {
+		Init(viewWidth_, viewHeight_, depthResolution);
+		glGetIntegerv(GL_VIEWPORT, view);
+		for (int i = 0; i < dataNum; i++) {
+			float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+			float* vertexp = vertexPointers[i];
+			for (int j = 0; j < vtNumArray[i]; j++) {
+				Vector3d tp;
+				Vector3d pp;
+				pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+
+				sphericalTrans_renderer(tp, pp, cameraParam);
+				trsVert[j * 3] = (float)tp(0, 0);
+				trsVert[j * 3 + 1] = (float)tp(1, 0);
+				trsVert[j * 3 + 2] = (float)tp(2, 0);
+				//			cout<<tp<<endl;
+			}
+			display(trsVert, facePointers[i], reflectancePointers[i], meshNumArray[i], vtNumArray[i]);
+			free(trsVert);
+		}
+	}
+	
+	
+
 
 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
 	//	SelectObject(dhdc,m_hbitmap_old);
@@ -429,6 +480,7 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 	glReadPixels(view[0], view[1], view[2], view[3], GL_RED, GL_FLOAT, reflectanceImage);
 	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
 	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
+	cout << view[2] << "," << view[3] << endl;
 	//::wglMakeCurrent(0, 0);
 	//	GlobalFree(lpBuf);
 	//	GlobalFree(lpBuf);
@@ -440,7 +492,7 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 
 	GLint view[4];
-	Init(viewSize, depthResolution);
+	Init(viewWidth_,viewHeight_, depthResolution);
 	glGetIntegerv(GL_VIEWPORT, view);
 	for (int i = 0; i < dataNum; i++) {
 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
@@ -541,7 +593,7 @@ void PanoramaRenderer::render_dot(Matrix4d& cameraParameter, int viewSize) {
 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewSize, depthResolution);
+	Init(viewWidth_, viewHeight_, depthResolution);
 	glGetIntegerv(GL_VIEWPORT, view);
 	for (int i = 0; i < dataNum; i++) {
 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
@@ -665,7 +717,7 @@ void PanoramaRenderer::renderColor(Vector3d& center, Matrix3d& viewDirection, in
 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewSize, depthResolution);
+	Init(viewWidth_, viewHeight_, depthResolution);
 	glGetIntegerv(GL_VIEWPORT, view);
 	for (int i = 0; i < dataNum; i++) {
 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
@@ -797,7 +849,7 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParameter, int viewSize) {
 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewSize, depthResolution);
+	Init(viewWidth_, viewHeight_, depthResolution);
 	glGetIntegerv(GL_VIEWPORT, view);
 	for (int i = 0; i < dataNum; i++) {
 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
@@ -1046,7 +1098,7 @@ void PanoramaRenderer::outputDepth(string fileName) {
 	BITMAPINFOHEADER	_if;
 	int		_fh_size = sizeof(BITMAPFILEHEADER);
 	int		_if_size = sizeof(BITMAPINFOHEADER);
-	int		_size = viewHeight * viewHeight * 2 * 3;
+	int		_size = viewHeight_ * viewWidth_* 3;
 	::ZeroMemory(&_fh, _fh_size);
 	::ZeroMemory(&_if, _if_size);
 	//	Initialize BITMAPFILEHEADER.
@@ -1056,8 +1108,8 @@ void PanoramaRenderer::outputDepth(string fileName) {
 	((char*)&_fh)[1] = 'M';
 	//	Initialize BITMAPINFOHEADER.
 	_if.biSize = _if_size;
-	_if.biWidth = viewHeight * 2;
-	_if.biHeight = viewHeight;
+	_if.biWidth = viewWidth_;
+	_if.biHeight = viewHeight_;
 	_if.biPlanes = 1;
 	_if.biBitCount = 24;
 	_if.biCompression = BI_RGB;
@@ -1073,7 +1125,7 @@ void PanoramaRenderer::outputDepth(string fileName) {
 		_cdata[0] = gr;
 		_cdata[1] = gr;
 		_cdata[2] = gr;
-		//		cout<<(int)_tdata[0]<<endl;
+				
 		_tdata += 1;
 		_cdata += 3;
 	}
@@ -1430,8 +1482,8 @@ void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParam
 	ret_ << -theta, phi, r;
 }
 
-void Init(int viewSize, double depthResolution) {
-	glViewport(0, 0, viewSize * 2, viewSize);
+void Init(int viewWidth,int viewHeight, double depthResolution) {
+	glViewport(0, 0, viewWidth, viewHeight);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -1444,12 +1496,61 @@ void Init(int viewSize, double depthResolution) {
 		0.0, 0.0, 1.0,   // 視界の中心位置の参照点座標x,y,z
 		0.0, -1.0, 0.0);  //視界の上方向のベクトルx,y,z*/
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//	GLfloat light_position[]
-	//	glLigntfv(GL_LIGHT0,GL_POSITION,);
-
 }
 
-void PanoramaRenderer::createContext(int viewSize_) {
+
+
+void InitPers(int viewWidth, int viewHeight, double depthResolution, double* intrinsic) {
+
+	glViewport(0, 0, viewWidth, viewHeight);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glEnable(GL_DEPTH_TEST);
+
+	GLfloat m[16];
+
+	//double zfar = 100.00;
+	double znear = 0.003;
+
+	Matrix4d m1_, r2l, rev;//projection
+	double cx = intrinsic[0];
+	double cy = intrinsic[1];
+	double fx = intrinsic[2];
+	double fy = intrinsic[3];
+	double zfar = znear+depthResolution;
+	m1_ <<
+		2 * fx / viewWidth, 0, (viewWidth + 2 * cx) / viewWidth, 0,
+		0, -2 * fy / viewHeight, (-viewHeight + 2 * cy) / viewHeight, 0,
+		0, 0, -(zfar + znear) / (zfar - znear), - 2 * zfar*znear / (zfar - znear),
+		0, 0, -1, 0;
+
+	r2l <<
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0
+		, 0, 0, 0, 1;
+	rev <<
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0
+		, 0, 0, 0, 1;
+	Matrix4d m3 = m1_;
+
+	GLdouble m2[16];
+	memcpy(m2, m3.data(), sizeof(double) * 16);
+
+	glMultMatrixd(m2);
+	//gluLookAt(
+	//	0.0, 0.0, 0.0, // 視点の位置x,y,z;
+	//	2.0, 5.0, 1.0,   // 視界の中心位置の参照点座標x,y,z
+	//	0.0, 1.0, 0.0);  //視界の上方向のベクトルx,y,z*/
+	//gluPerspective(90.0, 1.0, 0.003, depthResolution + 0.003);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void PanoramaRenderer::createContext(int view_w,int view_h) {
 	PIXELFORMATDESCRIPTOR _pfd = {
 sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
 1,	//	Versin of this structure
@@ -1473,10 +1574,10 @@ PFD_GENERIC_ACCELERATED,
 	};
 	GLint view[4];
 	HDC		_hdc_ = CreateCompatibleDC(NULL);
-	viewSize = viewSize_;
-	viewHeight = viewSize;
-	DWORD m_DIBWidth = viewSize * 2;
-	DWORD m_DIBHeight = viewSize;
+	viewWidth_ = view_w;
+	viewHeight_ = view_h;
+	DWORD m_DIBWidth = viewWidth_;
+	DWORD m_DIBHeight = viewHeight_;
 	DWORD m_BPP = 24;
 
 	// Create BITMAPINFOHEADER
@@ -1512,8 +1613,7 @@ PFD_GENERIC_ACCELERATED,
 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
 
-
-
 }
 
-int PanoramaRenderer::viewSize;
+int PanoramaRenderer::viewWidth_;
+int PanoramaRenderer::viewHeight_;
