@@ -328,6 +328,19 @@ void timeSequencePtx2ply(string in_ptxFn,string out_plyFn){
 
 }
 
+
+void mat2axis_angle(Matrix3d m, Vector3d& retv, double& angle) {
+	double x, y, z;
+	double r = sqrt((m(2, 1) - m(1, 2))*(m(2, 1) - m(1, 2)) + (m(0, 2) - m(2, 0))*(m(0, 2) - m(2, 0)) + (m(1, 0) - m(0, 1))*(m(1, 0) - m(0, 1)));
+	x = (m(2, 1) - m(1, 2)) / r;
+	y = (m(0, 2) - m(2, 0)) / r;
+	z = (m(1, 0) - m(0, 1)) / r;
+	Vector3d t;
+	t << x, y, z;
+	retv = t;
+	angle = acos((m(0, 0) + m(1, 1) + m(2, 2) - 1) / 2);
+}
+
 Matrix4d getMatrixFlomPly(string fn){
 	ifstream ifs(fn,ios::binary);
 	string line;
@@ -357,13 +370,7 @@ Matrix4d getMatrixFlomPly(string fn){
 }
 
 double miComputing(double* histogram,int width,int height){
-
-
-
 	return miComputing(histogram,width,height,0);
-
-
-
 };
 double miComputing(double* histogram,int width,int height,int offset){
 	double* histf=(double*)malloc(sizeof(double)*width);
@@ -442,58 +449,6 @@ void writePlyOnePointRGB(ofstream& ofs,Vector3f& p,unsigned char* rgba){
 
 }
 
-//p_3d=M*p_2d: cam->3D scanner translation
-Matrix4d readVannoPara(string fileName){
-					ifstream ifs(fileName,ios::binary);
-					string line;	
-					int n=0;
-					getline(ifs,line);//"Camera position"
-					getline(ifs,line);
-					float position[3];
-					for(int i=0;i<3;i++){
-						if(i!=2)position[i]=stof(line.substr(0,line.find_first_of(" ")));
-						else position[i]=stof(line);
-						line.erase(0,line.find_first_of(" ")+1);
-					}
-					getline(ifs,line);//"Camera pose"
-					getline(ifs,line);
-					float pose[4];
-					for(int i=0;i<4;i++){
-						if(i!=3)pose[i]=stof(line.substr(0,line.find_first_of(" ")));
-						else pose[i]=stof(line);
-						line.erase(0,line.find_first_of(" ")+1);
-					}
-					ifs.close();
-					Matrix4d P;
-
-					float q3=pose[0],
-					q0=pose[1],
-					q1=pose[2],
-					q2=pose[3];
-					//阪野さんのcparaファイルはおそらくladybugの座標が正しい定義よりz軸回りに180°回転した定義になってる
-					P<<-(1-2.0*(q1*q1+q2*q2)),
-						-2*(q0*q1+q2*q3),
-						2*(q2*q0-q1*q3),
-						position[0],
-
-					-2*(q0*q1-q2*q3),
-					-(1.0-2.0*(q2*q2+q0*q0)),
-					2*(q1*q2+q0*q3),
-					position[1],
-
-					-2*(q2*q0+q1*q3),
-					-2*(q1*q2-q0*q3),
-					1.0-2.0*(q1*q1+q0*q0),
-					position[2],
-
-					0,0,0,1;
-
-
-//					Matrix4d rot180;
-//					rot180<<-1,0,0,0,0,-1,0,0,0,0,1,0,0,0,0,1;
-
-	return P;
-}
 
 //p_3d=M*p_2d: cam->3D scanner translation
 Matrix4d readCPara(string fileName){
@@ -552,6 +507,18 @@ Matrix4d readCPara(string fileName){
 	return P;
 }
 
+
+void writeCPara(std::string fileName, Eigen::Matrix4d paraMat) {
+	Eigen::Matrix3d rotMat = paraMat.block(0, 0, 3, 3);
+	Eigen::Vector3d t = paraMat.block(0, 3, 3, 1);
+	Eigen::Vector4d q = dcm2q(rotMat);
+	std::ofstream ofs(fileName);
+	ofs << "Camera position" << std::endl;
+	ofs << t(0) << " " << t(1) << " " << t(2) << std::endl;
+	ofs << "Camera orientation" << std::endl;
+	ofs << q(0) << " " << q(1) << " " << q(2) << " " << q(3) << std::endl;
+	ofs.close();
+}
 
 void omniTrans(double x,double y, double z,double& phi,double& theta){
 	double r=sqrt(x*x+y*y+z*z);

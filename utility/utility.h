@@ -5,10 +5,25 @@
 #include <vector>
 #include <Eigen\Eigen>
 #include <Eigen\Core>
-#include <windows.system.h>
 #include <time.h> 
+
+#if defined(WIN32) || defined(WIN64)
+// Windows 32-bit and 64-bit
+#include <Windows.h>
+#include <windows.system.h>
 #include <imagehlp.h>
 #pragma comment(lib, "imagehlp.lib")
+
+#elif defined(MAC_OSX)
+// Mac OSX
+
+#else
+// Linux and all others
+// Using GCC 4 where hiding attributes is possible
+
+
+#endif
+
 
 using namespace std;
 using namespace Eigen;
@@ -94,6 +109,8 @@ void R2axisRot(Matrix3d R,double& rx,double& ry,double& rz);
 Matrix4d _6dof2m(_6dof dof);
 _6dof m2_6dof(Matrix4d& m);
 
+void mat2axis_angle(Matrix3d m, Vector3d& retv, double& angle);
+
 Matrix4d getMatrixFlomPly(string fn);
 
 void writePlyHeader(ofstream& ofs,int vertSize,int faceSize);
@@ -119,9 +136,8 @@ double getSubPixelValueFloat();
 double miComputing(double* histogram,int width,int height);
 double miComputing(double* histogram,int width,int height,int start);
 
-//
-Matrix4d readVannoPara(string fileName);
 Matrix4d readCPara(string fileName);
+void writeCPara(std::string fileName, Eigen::Matrix4d paraMat);
 
 bool makeFolder(string folderPath);
 
@@ -133,6 +149,8 @@ double get2Line_Distance(Vector3d& p1,Vector3d& v1,Vector3d& p2,Vector3d& v2,Vec
 double get_point2lineDistance(Vector3d& p1,Vector3d& v1,Vector3d& p2);
 
 string getTimeStamp();
+
+
 
 #endif
 
