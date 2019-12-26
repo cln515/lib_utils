@@ -1508,44 +1508,44 @@ void InitPers(int viewWidth, int viewHeight, double depthResolution, double* int
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 
-	GLfloat m[16];
+	//GLfloat m[16];
 
-	//double zfar = 100.00;
-	double znear = 0.003;
+	////double zfar = 100.00;
+	//double znear = 0.003;
 
-	Matrix4d m1_, r2l, rev;//projection
-	double cx = intrinsic[0];
-	double cy = intrinsic[1];
-	double fx = intrinsic[2];
-	double fy = intrinsic[3];
-	double zfar = znear+depthResolution;
-	m1_ <<
-		2 * fx / viewWidth, 0, (viewWidth + 2 * cx) / viewWidth, 0,
-		0, -2 * fy / viewHeight, (-viewHeight + 2 * cy) / viewHeight, 0,
-		0, 0, -(zfar + znear) / (zfar - znear), - 2 * zfar*znear / (zfar - znear),
-		0, 0, -1, 0;
+	//Matrix4d m1_, r2l, rev;//projection
+	//double cx = intrinsic[0];
+	//double cy = intrinsic[1];
+	//double fx = intrinsic[2];
+	//double fy = intrinsic[3];
+	//double zfar = znear+depthResolution;
+	//m1_ <<
+	//	2 * fx / viewWidth, 0, (viewWidth + 2 * cx) / viewWidth, 0,
+	//	0, -2 * fy / viewHeight, (-viewHeight + 2 * cy) / viewHeight, 0,
+	//	0, 0, -(zfar + znear) / (zfar - znear), - 2 * zfar*znear / (zfar - znear),
+	//	0, 0, -1, 0;
 
-	r2l <<
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0
-		, 0, 0, 0, 1;
-	rev <<
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0
-		, 0, 0, 0, 1;
-	Matrix4d m3 = m1_;
+	//r2l <<
+	//	1, 0, 0, 0,
+	//	0, 1, 0, 0,
+	//	0, 0, 1, 0
+	//	, 0, 0, 0, 1;
+	//rev <<
+	//	1, 0, 0, 0,
+	//	0, 1, 0, 0,
+	//	0, 0, 1, 0
+	//	, 0, 0, 0, 1;
+	//Matrix4d m3 = m1_;
 
-	GLdouble m2[16];
-	memcpy(m2, m3.data(), sizeof(double) * 16);
+	//GLdouble m2[16];
+	//memcpy(m2, m3.data(), sizeof(double) * 16);
 
-	glMultMatrixd(m2);
-	//gluLookAt(
-	//	0.0, 0.0, 0.0, // 視点の位置x,y,z;
-	//	2.0, 5.0, 1.0,   // 視界の中心位置の参照点座標x,y,z
-	//	0.0, 1.0, 0.0);  //視界の上方向のベクトルx,y,z*/
-	//gluPerspective(90.0, 1.0, 0.003, depthResolution + 0.003);
+	//glMultMatrixd(m2);
+	gluLookAt(
+		0.0, 0.0, 0.0, // 視点の位置x,y,z;
+		0.0, 0.0, 1.0,   // 視界の中心位置の参照点座標x,y,z
+		0.0, 1.0, 0.0);  //視界の上方向のベクトルx,y,z*/
+	gluPerspective(90.0, 1.0, 0.003, depthResolution + 0.003);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
