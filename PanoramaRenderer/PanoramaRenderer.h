@@ -48,8 +48,9 @@ protected:
 	static int viewWidth_;
 	bool persRender = false;
 	double intrinsic[4];
+	double znear;
 public:
-	PanoramaRenderer() { dataNum = 0; bNormalImage = false; depthResolution = 20.0; };
+	PanoramaRenderer() { dataNum = 0; bNormalImage = false; depthResolution = 20.0; znear = 0.3; };
 	void setDepthFarClip(double depthResolution_) { depthResolution = depthResolution_; }
 	void setData(float* vertex, unsigned int* face, float* reflectance, int vertNum, int meshNum);
 	void setOutputNorm(bool bNormalImage_) { bNormalImage = bNormalImage_; };
@@ -91,11 +92,13 @@ public:
 		intrinsic[2] = fx;
 		intrinsic[3] = fy;
 	};
-	void getPersRender(double& cx, double& cy, double& fx, double& fy) {
+	void getPersRender(double& cx, double& cy, double& fx, double& fy, double& zn, double& zf) {
 		cx = intrinsic[0];
 		cy = intrinsic[1];
 		fx = intrinsic[2];
 		fy = intrinsic[3];
+		zn = znear;
+		zf = znear + depthResolution;
 	};
 	bool isPers() { return persRender; };
 };

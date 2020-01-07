@@ -13,7 +13,7 @@ void display_points(float*& vertex, unsigned int*& face, float*& reflectance, in
 void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Vector3d& center, Matrix3d& rotMatrix);
 void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParameter);
 void Init(int viewWidth, int viewHeight, double depthResolution);
-void InitPers(int viewWidth, int viewHeight, double depthResolution, double* intrinsic);
+void InitPers(int viewWidth, int viewHeight, double znear, double depthResolution, double* intrinsic);
 
 void PanoramaRenderer::setData(float* vertex, unsigned int* face, float* reflectance, int vertNum, int meshnum) {
 	if (dataNum == 0) {
@@ -404,7 +404,7 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 	GLint view[4];
 
 	if (persRender) {
-		InitPers(viewWidth_,viewHeight_, depthResolution,intrinsic);
+		InitPers(viewWidth_,viewHeight_,znear, depthResolution,intrinsic);
 		glGetIntegerv(GL_VIEWPORT, view);
 		for (int i = 0; i < dataNum; i++) {
 			float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
@@ -441,7 +441,7 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 				glVertex3f(trsVert[index2 * 3], trsVert[index2 * 3 + 1], trsVert[index2 * 3 + 2]);
 				glColor3ub(reflectancePointers[i][index3], reflectancePointers[i][index3], reflectancePointers[i][index3]);
 				glVertex3f(trsVert[index3 * 3], trsVert[index3 * 3 + 1], trsVert[index3 * 3 + 2]);
-				
+				//cout << trsVert[index3 * 3] << "," << trsVert[index3 * 3 + 1] << "," << trsVert[index3 * 3 + 2] << "," << endl;
 			}
 			glEnd();
 			
@@ -1045,7 +1045,7 @@ void PanoramaRenderer::outputReflectance(string fileName) {
 	BITMAPINFOHEADER	_if;
 	int		_fh_size = sizeof(BITMAPFILEHEADER);
 	int		_if_size = sizeof(BITMAPINFOHEADER);
-	int		_size = viewHeight * viewHeight * 2 * 3;
+	int		_size = viewHeight_ * viewWidth_ * 3;
 	::ZeroMemory(&_fh, _fh_size);
 	::ZeroMemory(&_if, _if_size);
 	//	Initialize BITMAPFILEHEADER.
@@ -1055,8 +1055,8 @@ void PanoramaRenderer::outputReflectance(string fileName) {
 	((char*)&_fh)[1] = 'M';
 	//	Initialize BITMAPINFOHEADER.
 	_if.biSize = _if_size;
-	_if.biWidth = viewHeight * 2;
-	_if.biHeight = viewHeight;
+	_if.biWidth = viewWidth_;
+	_if.biHeight = viewHeight_;
 	_if.biPlanes = 1;
 	_if.biBitCount = 24;
 	_if.biCompression = BI_RGB;
@@ -1500,7 +1500,7 @@ void Init(int viewWidth,int viewHeight, double depthResolution) {
 
 
 
-void InitPers(int viewWidth, int viewHeight, double depthResolution, double* intrinsic) {
+void InitPers(int viewWidth, int viewHeight,double znear ,double depthResolution, double* intrinsic) {
 
 	glViewport(0, 0, viewWidth, viewHeight);
 	glMatrixMode(GL_PROJECTION);
@@ -1508,44 +1508,50 @@ void InitPers(int viewWidth, int viewHeight, double depthResolution, double* int
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 
-	//GLfloat m[16];
+	GLfloat m[16];
 
-	////double zfar = 100.00;
-	//double znear = 0.003;
-
-	//Matrix4d m1_, r2l, rev;//projection
-	//double cx = intrinsic[0];
-	//double cy = intrinsic[1];
-	//double fx = intrinsic[2];
-	//double fy = intrinsic[3];
-	//double zfar = znear+depthResolution;
+	Matrix4d m1_, r2l, rev;//projection
+	double cx = intrinsic[0];
+	double cy = intrinsic[1];
+	double fx = intrinsic[2];
+	double fy = intrinsic[3];
+	double zfar = znear+depthResolution;
 	//m1_ <<
-	//	2 * fx / viewWidth, 0, (viewWidth + 2 * cx) / viewWidth, 0,
-	//	0, -2 * fy / viewHeight, (-viewHeight + 2 * cy) / viewHeight, 0,
+	//	2 * fx / viewWidth, 0, (viewWidth - 2 * cx) / viewWidth, 0,
+	//	0, -2 * fy / viewHeight, (viewHeight - 2 * cy) / viewHeight, 0,
 	//	0, 0, -(zfar + znear) / (zfar - znear), - 2 * zfar*znear / (zfar - znear),
 	//	0, 0, -1, 0;
 
-	//r2l <<
-	//	1, 0, 0, 0,
-	//	0, 1, 0, 0,
-	//	0, 0, 1, 0
-	//	, 0, 0, 0, 1;
-	//rev <<
-	//	1, 0, 0, 0,
-	//	0, 1, 0, 0,
-	//	0, 0, 1, 0
-	//	, 0, 0, 0, 1;
-	//Matrix4d m3 = m1_;
+	//m1_ <<
+	//	2 * fx / viewWidth, 0, (viewWidth - 2 * cx) / viewWidth, 0,
+	//	0, -2 * fy / viewHeight, (viewHeight - 2 * cy) / viewHeight, 0,
+	//	0, 0, (zfar + znear) / (zfar - znear), 2 * zfar*znear / (zfar - znear),
+	//	0, 0, -1, 0;
 
-	//GLdouble m2[16];
-	//memcpy(m2, m3.data(), sizeof(double) * 16);
+		//m1_ <<
+		//2 * fx / viewWidth, 0, -(viewWidth - 2 * cx) / viewWidth, 0,
+		//0, 2 * fy / viewHeight, -(viewHeight - 2 * cy) / viewHeight, 0,
+		//0, 0, -(zfar + znear) / (zfar - znear), 2 * zfar*znear / (zfar - znear),
+		//0, 0, 1, 0;
 
-	//glMultMatrixd(m2);
-	gluLookAt(
-		0.0, 0.0, 0.0, // 視点の位置x,y,z;
-		0.0, 0.0, 1.0,   // 視界の中心位置の参照点座標x,y,z
-		0.0, 1.0, 0.0);  //視界の上方向のベクトルx,y,z*/
-	gluPerspective(90.0, 1.0, 0.003, depthResolution + 0.003);
+		m1_ <<
+			2 * fx / viewWidth, 0, -(viewWidth - 2 * cx) / viewWidth, 0,
+			0, 2 * fy / viewHeight, -(viewHeight - 2 * cy) / viewHeight, 0,
+			0, 0, (zfar + znear) / (zfar - znear), -2 * zfar*znear / (zfar - znear),
+			0, 0, 1, 0;
+
+	Matrix4d m3 = m1_;
+
+	GLdouble m2[16];
+	memcpy(m2, m3.data(), sizeof(double) * 16);
+
+	glMultMatrixd(m2);
+	//gluPerspective(90.0, viewWidth/(double)viewHeight, 0.1, 100.0);
+	//gluLookAt(
+	//	0.0, 0.0, 0.0,
+	//	1.0, 0.0, 0.0,
+	//	0.0, 1.0, 0.0);
+
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
