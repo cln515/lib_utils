@@ -380,3 +380,43 @@ void automaticSteepestDescentOptimization(autoOptimizedVectorDescentFunction* fu
 	}
 
 }
+
+void steepestDescentOptimization(optimizedVectorDescentFunction* func, VectorXd& p, int dim, double& ans, VectorXd alphas, int maxIter) {
+	VectorXd diff(dim), diff_(dim);
+	double t = 1.0;
+	double div;
+	func->evaluateFunction(p, diff_, div);
+	int terminateCnt = 0;
+	for (int iter = 0; iter < maxIter; iter++) {
+		func->evaluateFunction(p, diff, ans);
+		t = 1.0;// (maxIter - iter) / (double)maxIter;
+		cout << iter << ": direction:" << diff.transpose() << endl;
+		while (t > 1e-4) {
+			VectorXd p_ = p - (alphas*t).cwiseProduct(diff);
+			//	cout << p_.transpose() << endl;
+			func->evaluateFunction(p_, diff_, div);
+			if (div < ans) {
+				p = p_;
+				double trate = 1.2 * ((1.0 + t) / 2);//adaptive alpha adjustment
+				alphas = trate * alphas;
+				if (div / ans > 1 - 1e-6) {
+					terminateCnt++;
+				}
+				else terminateCnt = 0;
+				break;
+			};
+			t *= 0.7;
+		}
+
+		cout << iter << ": value:" << div << endl;
+		cout << p.transpose() << endl;
+		if (t <= 1e-4) {
+			break;
+			//double trate = 1.2 * ((1.0 + t) / 2);//adaptive alpha adjustment
+			//terminateCnt++;
+		}
+		if (terminateCnt >= 3) {
+			break;
+		}
+	}
+}

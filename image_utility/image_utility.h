@@ -15,7 +15,7 @@ void getGraySubPixel_uchar(cv::Mat image,cv::Point2f p,double* ret);
 void getGraySubPixel_float(cv::Mat image,cv::Point2f p,double* ret);
 void getSubPixel_float(cv::Mat image,cv::Point2f p,double* ret);
 void getGraySubPixel(cv::Mat image,cv::Point2f p,double* ret,double* dret);
-void getColorSubPixel(cv::Mat image, cv::Point2f p, uchar *ret);
+void getColorSubPixel(cv::Mat image, cv::Point2d p, double *ret);
 
 void panoramaRectification(cv::Mat image1, cv::Mat image2, cv::Mat& dstimage1, cv::Mat& dstimage2, Vector3d epi, Matrix3d R, Matrix3d& R0, Matrix3d& R1);
 void panoramaRectification(cv::Mat image1, cv::Mat& dstimage1, Vector3d epi, Matrix3d R, Matrix3d& R0);

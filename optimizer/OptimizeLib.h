@@ -74,5 +74,6 @@ double brent_method(optimizedVectorFunction*,VectorXd&,VectorXd&,VectorXd&,float
 
 void powellOptimization(optimizedVectorFunction* func,VectorXd& p,int dim,double& ans,double dtol);
 void steepestDescentOptimization(optimizedVectorDescentFunction* func,VectorXd& p,int dim,double& ans,double alpha,int maxIter);
+void steepestDescentOptimization(optimizedVectorDescentFunction* func, VectorXd& p, int dim, double& ans, VectorXd alpha, int maxIter);
 void automaticSteepestDescentOptimization(autoOptimizedVectorDescentFunction* func,VectorXd& p,VectorXd& intervals,int dim,double& ans,double alpha,int maxIter);
 void automaticSteepestDescentOptimization(autoOptimizedVectorDescentFunction* func,VectorXd& p,VectorXd& intervals,int dim,double& ans,VectorXd&  alphas,int maxIter);

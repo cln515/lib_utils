@@ -1,0 +1,34 @@
+#pragma once
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
+#include <utility\utility.h>
+#include <opencv2/opencv.hpp>
+#include <image_utility/image_utility.h>
+
+
+
+class PointSequenceLoader {
+public:
+	void loadPointStream(std::string filePath);
+	bool getNextPointData(float* dat);
+	bool backPointData();
+	void writePlyReflectance(string filePath, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame);
+	void writePlyReflectance(string filePath, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip);
+	void writePlyReflectance(string filePath, string filePathPreview, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip);
+	void getPCReflectance(double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip, vector<float>& v, vector<float>& rf);
+	void getPCColor(double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, vector<string>imgFileNameList, vector<float>& v, vector<uchar>& rgba, int skip = 0);
+	__int64 seekByTime(double t);
+
+private:
+	bool seekByPointIdx(__int64 idx);
+	std::ifstream* ifs=NULL;
+	__int64 pointNum;
+	int fcnt;
+	std::string baseFilePath;
+	bool bStream;
+
+};

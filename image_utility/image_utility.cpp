@@ -123,14 +123,14 @@ void getGraySubPixel(cv::Mat image,cv::Point2f p,double *ret, double *dret){
 	dret[1]=dy;
 }
 
-void getColorSubPixel(cv::Mat image, cv::Point2f p, uchar *ret) {
+void getColorSubPixel(cv::Mat image, cv::Point2d p, double *ret) {
 	int xl = (int)(p.x - 0.5);
 	int yt = (int)(p.y - 0.5);
 	int xr = xl + 1;
 	int yb = yt + 1;
 
-	if (xl<0)xl = 0;
-	if (yt<0)yt = 0;
+	if (xl < 0)xl = 0;
+	if (yt < 0)yt = 0;
 	if (xr >= image.cols)xr = image.cols - 1;
 	if (yb >= image.rows)yb = image.rows - 1;
 	uchar* imArray = image.data;//3 channel
@@ -140,21 +140,21 @@ void getColorSubPixel(cv::Mat image, cv::Point2f p, uchar *ret) {
 
 	double rgb[3];
 
-	rgb[0] = (1 - dx)*(1 - dy)*imArray[(xl + yt*image.cols) * 3]
-		+ (dx)*(1 - dy) * imArray[(xr + yt*image.cols) * 3]
-		+ (1 - dx)*(dy)* imArray[(xl + yb*image.cols) * 3]
-		+ (dx)*(dy)* imArray[(xr + yb*image.cols) * 3];
-	rgb[1] = (1 - dx)*(1 - dy)*imArray[(xl + yt*image.cols) * 3 + 1]
-		+ (dx)*(1 - dy) * imArray[(xr + yt*image.cols) * 3 + 1]
-		+ (1 - dx)*(dy)* imArray[(xl + yb*image.cols) * 3 + 1]
-		+ (dx)*(dy)* imArray[(xr + yb*image.cols) * 3 + 1];
-	rgb[2] = (1 - dx)*(1 - dy)*imArray[(xl + yt*image.cols) * 3 + 2]
-		+ (dx)*(1 - dy) * imArray[(xr + yt*image.cols) * 3 + 2]
-		+ (1 - dx)*(dy)* imArray[(xl + yb*image.cols) * 3 + 2]
-		+ (dx)*(dy)* imArray[(xr + yb*image.cols) * 3 + 2];
-	ret[0] = (uchar)rgb[0];
-	ret[1] = (uchar)rgb[1];
-	ret[2] = (uchar)rgb[2];
+	rgb[0] = (1 - dx)*(1 - dy)*imArray[(xl + yt * image.cols) * 3]
+		+ (dx)*(1 - dy) * imArray[(xr + yt * image.cols) * 3]
+		+ (1 - dx)*(dy)* imArray[(xl + yb * image.cols) * 3]
+		+ (dx)*(dy)* imArray[(xr + yb * image.cols) * 3];
+	rgb[1] = (1 - dx)*(1 - dy)*imArray[(xl + yt * image.cols) * 3 + 1]
+		+ (dx)*(1 - dy) * imArray[(xr + yt * image.cols) * 3 + 1]
+		+ (1 - dx)*(dy)* imArray[(xl + yb * image.cols) * 3 + 1]
+		+ (dx)*(dy)* imArray[(xr + yb * image.cols) * 3 + 1];
+	rgb[2] = (1 - dx)*(1 - dy)*imArray[(xl + yt * image.cols) * 3 + 2]
+		+ (dx)*(1 - dy) * imArray[(xr + yt * image.cols) * 3 + 2]
+		+ (1 - dx)*(dy)* imArray[(xl + yb * image.cols) * 3 + 2]
+		+ (dx)*(dy)* imArray[(xr + yb * image.cols) * 3 + 2];
+	ret[0] = rgb[0];
+	ret[1] = rgb[1];
+	ret[2] = rgb[2];
 }
 
 
@@ -195,15 +195,15 @@ void panoramaRectification(cv::Mat image1, cv::Mat image2, cv::Mat& dstimage1, c
 	R1inv = R1.inverse();
 
 
-	for (int ix = 0;ix < resynthimg1.cols;ix++) {
-		for (int iy = 0;iy < resynthimg1.rows;iy++) {
+	for (int ix = 0; ix < resynthimg1.cols; ix++) {
+		for (int iy = 0; iy < resynthimg1.rows; iy++) {
 			Vector3d ret, transed;
 			rev_omniTrans(ix, iy, resynthimg1.cols, resynthimg1.rows, ret);
-			transed = R0inv*ret;
+			transed = R0inv * ret;
 			double nix, niy;
 			omniTrans(transed(0), transed(1), transed(2), niy, nix, resynthimg1.rows);
 			cv::Point2f p(nix, niy);
-			uchar rgb[3];
+			double rgb[3];
 			if (image1.type() == CV_8UC1) {
 				if (nix<0 || nix>image1.cols || niy<0 || niy>image1.rows) {
 					rgb[0] = 0;
@@ -211,35 +211,35 @@ void panoramaRectification(cv::Mat image1, cv::Mat image2, cv::Mat& dstimage1, c
 				else {
 					double ret[8];
 					getGraySubPixel_uchar(image1, p, ret);
-					rgb[0]=(uchar)((ret[0] * ret[1] + ret[2] * ret[3] + ret[4] * ret[5] + ret[6] * ret[7])*256);
+					rgb[0] = (uchar)((ret[0] * ret[1] + ret[2] * ret[3] + ret[4] * ret[5] + ret[6] * ret[7]) * 256);
 				}
-				resynthimg1.data[(ix + iy*resynthimg1.cols)] = rgb[0];
+				resynthimg1.data[(ix + iy * resynthimg1.cols)] = rgb[0];
 			}
 			else {
 				if (nix<0 || nix>image1.cols || niy<0 || niy>image1.rows) {
-					rgb[0] = 0;rgb[1] = 0;rgb[2] = 0;
+					rgb[0] = 0; rgb[1] = 0; rgb[2] = 0;
 				}
 				else {
 					getColorSubPixel(image1, p, rgb);
 
 				}
-				resynthimg1.data[(ix + iy*resynthimg1.cols) * 3] = rgb[0];
-				resynthimg1.data[(ix + iy*resynthimg1.cols) * 3 + 1] = rgb[1];
-				resynthimg1.data[(ix + iy*resynthimg1.cols) * 3 + 2] = rgb[2];
+				resynthimg1.data[(ix + iy * resynthimg1.cols) * 3] = rgb[0];
+				resynthimg1.data[(ix + iy * resynthimg1.cols) * 3 + 1] = rgb[1];
+				resynthimg1.data[(ix + iy * resynthimg1.cols) * 3 + 2] = rgb[2];
 			}
-			
-			
+
+
 		}
 	}
-	for (int ix = 0;ix < resynthimg2.cols;ix++) {
-		for (int iy = 0;iy < resynthimg2.rows;iy++) {
+	for (int ix = 0; ix < resynthimg2.cols; ix++) {
+		for (int iy = 0; iy < resynthimg2.rows; iy++) {
 			Vector3d ret, transed;
 			rev_omniTrans(ix, iy, resynthimg2.cols, resynthimg2.rows, ret);
-			transed = R1inv*ret;
+			transed = R1inv * ret;
 			double nix, niy;
 			omniTrans(transed(0), transed(1), transed(2), niy, nix, resynthimg2.rows);
 			cv::Point2f p(nix, niy);
-			uchar rgb[3];
+			double rgb[3];
 			if (image2.type() == CV_8UC1) {
 				if (nix<0 || nix>image1.cols || niy<0 || niy>image1.rows) {
 					rgb[0] = 0;
@@ -249,17 +249,18 @@ void panoramaRectification(cv::Mat image1, cv::Mat image2, cv::Mat& dstimage1, c
 					getGraySubPixel_uchar(image2, p, ret);
 					rgb[0] = (uchar)((ret[0] * ret[1] + ret[2] * ret[3] + ret[4] * ret[5] + ret[6] * ret[7]) * 256);
 				}
-				resynthimg2.data[(ix + iy*resynthimg2.cols)] = rgb[0];
-			}else{
+				resynthimg2.data[(ix + iy * resynthimg2.cols)] = rgb[0];
+			}
+			else {
 				if (nix<0 || nix>image2.cols || niy<0 || niy>image2.rows) {
-					rgb[0] = 0;rgb[1] = 0;rgb[2] = 0;
+					rgb[0] = 0; rgb[1] = 0; rgb[2] = 0;
 				}
 				else {
 					getColorSubPixel(image2, p, rgb);
 				}
-				resynthimg2.data[(ix + iy*resynthimg2.cols) * 3] = rgb[0];
-				resynthimg2.data[(ix + iy*resynthimg2.cols) * 3 + 1] = rgb[1];
-				resynthimg2.data[(ix + iy*resynthimg2.cols) * 3 + 2] = rgb[2];
+				resynthimg2.data[(ix + iy * resynthimg2.cols) * 3] = rgb[0];
+				resynthimg2.data[(ix + iy * resynthimg2.cols) * 3 + 1] = rgb[1];
+				resynthimg2.data[(ix + iy * resynthimg2.cols) * 3 + 2] = rgb[2];
 			}
 		}
 	}
@@ -303,15 +304,15 @@ void panoramaRectification(cv::Mat image1, cv::Mat& dstimage1, Vector3d epi_, Ma
 	R0inv = R0.inverse();
 
 
-	for (int ix = 0;ix < resynthimg1.cols;ix++) {
-		for (int iy = 0;iy < resynthimg1.rows;iy++) {
+	for (int ix = 0; ix < resynthimg1.cols; ix++) {
+		for (int iy = 0; iy < resynthimg1.rows; iy++) {
 			Vector3d ret, transed;
 			rev_omniTrans(ix, iy, resynthimg1.cols, resynthimg1.rows, ret);
-			transed = R0inv*ret;
+			transed = R0inv * ret;
 			double nix, niy;
 			omniTrans(transed(0), transed(1), transed(2), niy, nix, resynthimg1.rows);
 			cv::Point2f p(nix, niy);
-			uchar rgb[3];
+			double rgb[3];
 			if (image1.type() == CV_8UC1) {
 				if (nix<0 || nix>image1.cols || niy<0 || niy>image1.rows) {
 					rgb[0] = 0;
@@ -321,19 +322,19 @@ void panoramaRectification(cv::Mat image1, cv::Mat& dstimage1, Vector3d epi_, Ma
 					getGraySubPixel_uchar(image1, p, ret);
 					rgb[0] = (uchar)((ret[0] * ret[1] + ret[2] * ret[3] + ret[4] * ret[5] + ret[6] * ret[7]) * 256);
 				}
-				resynthimg1.data[(ix + iy*resynthimg1.cols)] = rgb[0];
+				resynthimg1.data[(ix + iy * resynthimg1.cols)] = rgb[0];
 			}
 			else {
 				if (nix<0 || nix>image1.cols || niy<0 || niy>image1.rows) {
-					rgb[0] = 0;rgb[1] = 0;rgb[2] = 0;
+					rgb[0] = 0; rgb[1] = 0; rgb[2] = 0;
 				}
 				else {
 					getColorSubPixel(image1, p, rgb);
 
 				}
-				resynthimg1.data[(ix + iy*resynthimg1.cols) * 3] = rgb[0];
-				resynthimg1.data[(ix + iy*resynthimg1.cols) * 3 + 1] = rgb[1];
-				resynthimg1.data[(ix + iy*resynthimg1.cols) * 3 + 2] = rgb[2];
+				resynthimg1.data[(ix + iy * resynthimg1.cols) * 3] = rgb[0];
+				resynthimg1.data[(ix + iy * resynthimg1.cols) * 3 + 1] = rgb[1];
+				resynthimg1.data[(ix + iy * resynthimg1.cols) * 3 + 2] = rgb[2];
 			}
 
 
@@ -516,48 +517,48 @@ void fisheye2panorama(cv::Mat inputArray, cv::Mat& outputArray, cv::Mat cameraPa
 	double k2 = distortionCoeff.at<double>(1, 0);
 	double k3 = distortionCoeff.at<double>(2, 0);
 	outputArray=cv::Mat(1500, 3000, inputArray.type());
-	for (int x = 0;x < outputArray.size().width;x++) {
-		for (int y = 0;y < outputArray.size().height;y++) {
+	for (int x = 0; x < outputArray.size().width; x++) {
+		for (int y = 0; y < outputArray.size().height; y++) {
 			rev_omniTrans(x, y, outputArray.size().width, outputArray.size().height, ret);
 			double u, v;
 			if (ret(2) != 0) {
 				double a = ret(0) / ret(2);
 				double b = ret(1) / ret(2);
-				double r = sqrt( a*a + b*b);
+				double r = sqrt(a*a + b * b);
 				if (ret(2) < 0)r = -r;
 				double theta = atan(r);
 				if (theta < 0)theta += M_PI;
 
-				double thetad = theta*(1 + k1*theta*theta + k2*theta*theta*theta*theta);
+				double thetad = theta * (1 + k1 * theta*theta + k2 * theta*theta*theta*theta + k3 * theta*theta*theta*theta*theta*theta);
 				//if (theta > M_PI*92.5/90 / 2)thetad = theta;
 				double xd = (thetad / r)*a;
 				double yd = (thetad / r)*b;
-				u = fx*xd + ox;
-				v = fy*yd + oy;
+				u = fx * xd + ox;
+				v = fy * yd + oy;
 			}
 			else {
-				double theta = M_PI/2;
-				double thetad = theta*(1 + k1*theta*theta + k2*theta*theta*theta*theta + k3*theta*theta*theta*theta*theta*theta);
+				double theta = M_PI / 2;
+				double thetad = theta * (1 + k1 * theta*theta + k2 * theta*theta*theta*theta + k3 * theta*theta*theta*theta*theta*theta);
 				double r = ret(0)*ret(0) + ret(1)*ret(1);
 				double xd = (thetad)*ret(0);
 				double yd = (thetad)*ret(1);
-				u = fx*xd + ox;
-				v = fy*yd + oy;			
+				u = fx * xd + ox;
+				v = fy * yd + oy;
 			}
 
 
 
-			cv::Point2f p(u,v);
-			uchar rgb[3];
+			cv::Point2f p(u, v);
+			double rgb[3];
 			if (u > 0 && u < inputArray.size().width&&v >0 && v < inputArray.size().height) {
 				getColorSubPixel(inputArray, p, rgb);
 			}
 			else {
 				rgb[0] = rgb[1] = rgb[2] = 0;
 			}
-			outputArray.data[(x + y*outputArray.cols) * 3] = rgb[0];
-			outputArray.data[(x + y*outputArray.cols) * 3 + 1] = rgb[1];
-			outputArray.data[(x + y*outputArray.cols) * 3 + 2] = rgb[2];
+			outputArray.data[(x + y * outputArray.cols) * 3] = rgb[0];
+			outputArray.data[(x + y * outputArray.cols) * 3 + 1] = rgb[1];
+			outputArray.data[(x + y * outputArray.cols) * 3 + 2] = rgb[2];
 		}
 	}
 
