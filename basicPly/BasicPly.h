@@ -42,7 +42,26 @@ protected:
 	bool isANN;
 	bool bRead;
 
+	bool bG = false;
+	bool bC = false;
 public:
+
+	enum PROP {
+		PROP_XF,
+		PROP_YF,
+		PROP_ZF,
+		PROP_XD,
+		PROP_YD,
+		PROP_ZD,
+		PROP_INTENSITY,
+		PROP_R,
+		PROP_G,
+		PROP_B,
+		PROP_A,
+		PROP_OTHER_D,
+		PROP_OTHER_F,
+		PROP_OTHER_UC
+	};
 	BasicPly(){
 		vertexnum=0;
 		facenum=0;
@@ -53,6 +72,7 @@ public:
 
 	bool readPlyFile(vector<string> fileName,int dataNum);
 	bool readPlyFileRGB(vector<string> fileName,int dataNum);
+	bool readPlyFile_(string fileName);
 
 	void panoramaTexture(unsigned char* rgbArray,int width,int height,Matrix4d& transMat);
 
@@ -73,6 +93,7 @@ public:
 	void transform(Matrix4d m);
 
 	void writePlyFile(string fileName);
+	void writePlyFileAuto(string fileName);
 //	void writePlyFileForMeshlab(string fileName);
 	void writePlyFileRGB(string fileName);
 	void writePlyFileRGBForMeshlab(string fileName);
