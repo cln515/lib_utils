@@ -356,30 +356,30 @@ void automaticSteepestDescentOptimization(autoOptimizedVectorDescentFunction* fu
 
 }
 
-void automaticSteepestDescentOptimization(autoOptimizedVectorDescentFunction* func,VectorXd& p,VectorXd& intervals,int dim,double& ans,VectorXd& alphas,int maxIter){
-	VectorXd diff(dim);
-	double t=1.0;
-	double div;
-	func->evaluateFunction(p,div);
-	for(int iter=0;iter<maxIter;iter++){
-		t=(maxIter-iter)/(double)maxIter;
-		func->autoEvaluateFunctionAndDiffer(p,diff,intervals,dim,ans);	
-		while(t>(maxIter-iter)/(double)maxIter*0.01){
-			VectorXd p_=p+(alphas*t).cwiseProduct(diff);
-			func->evaluateFunction(p_,div);
-			if(div<ans){
-				p=p_;
-				break;
-			};
-			t*=0.8;
-		}
-		cout<<iter<<": value:"<<div<<endl;
-		if(t<=(maxIter-iter)/(double)maxIter*0.01){
-			break;
-		}
-	}
-
-}
+//void automaticSteepestDescentOptimization(autoOptimizedVectorDescentFunction* func,VectorXd& p,VectorXd& intervals,int dim,double& ans,VectorXd& alphas,int maxIter){
+//	VectorXd diff(dim);
+//	double t=1.0;
+//	double div;
+//	func->evaluateFunction(p,div);
+//	for(int iter=0;iter<maxIter;iter++){
+//		t=(maxIter-iter)/(double)maxIter;
+//		func->autoEvaluateFunctionAndDiffer(p,diff,intervals,dim,ans);	
+//		while(t>(maxIter-iter)/(double)maxIter*0.01){
+//			VectorXd p_=p+(alphas*t).cwiseProduct(diff);
+//			func->evaluateFunction(p_,div);
+//			if(div<ans){
+//				p=p_;
+//				break;
+//			};
+//			t*=0.8;
+//		}
+//		cout<<iter<<": value:"<<div<<endl;
+//		if(t<=(maxIter-iter)/(double)maxIter*0.01){
+//			break;
+//		}
+//	}
+//
+//}
 
 void steepestDescentOptimization(optimizedVectorDescentFunction* func, VectorXd& p, int dim, double& ans, VectorXd alphas, int maxIter) {
 	VectorXd diff(dim), diff_(dim);
@@ -395,6 +395,50 @@ void steepestDescentOptimization(optimizedVectorDescentFunction* func, VectorXd&
 			VectorXd p_ = p - (alphas*t).cwiseProduct(diff);
 			//	cout << p_.transpose() << endl;
 			func->evaluateFunction(p_, diff_, div);
+			if (div < ans) {
+				p = p_;
+				double trate = 1.2 * ((1.0 + t) / 2);//adaptive alpha adjustment
+				alphas = trate * alphas;
+				if (div / ans > 1 - 1e-6) {
+					terminateCnt++;
+				}
+				else terminateCnt = 0;
+				break;
+			};
+			t *= 0.7;
+		}
+
+		cout << iter << ": value:" << div << endl;
+		cout << p.transpose() << endl;
+		if (t <= 1e-4) {
+			break;
+			//double trate = 1.2 * ((1.0 + t) / 2);//adaptive alpha adjustment
+			//terminateCnt++;
+		}
+		if (terminateCnt >= 3) {
+			break;
+		}
+	}
+}
+
+
+
+void automaticSteepestDescentOptimization(autoOptimizedVectorDescentFunction* func, VectorXd& p, VectorXd& intervals, int dim, double& ans, VectorXd& alphas, int maxIter) {
+	VectorXd diff(dim), diff_(dim);
+	double t = 1.0;
+	double div;
+//	func->evaluateFunction(p, diff_, div);
+	int terminateCnt = 0;
+	for (int iter = 0; iter < maxIter; iter++) {
+//		func->evaluateFunction(p, diff, ans);
+		func->autoEvaluateFunctionAndDiffer(p, diff, intervals, dim, ans);
+		t = 1.0;// (maxIter - iter) / (double)maxIter;
+		cout << iter << ": direction:" << diff.transpose() << endl;
+		while (t > 1e-4) {
+			VectorXd p_ = p - (alphas*t).cwiseProduct(diff);
+			//	cout << p_.transpose() << endl;
+			func->evaluateFunction(p_, div);
+//			func->autoEvaluateFunctionAndDiffer(p, diff_, intervals, dim, div);
 			if (div < ans) {
 				p = p_;
 				double trate = 1.2 * ((1.0 + t) / 2);//adaptive alpha adjustment

@@ -51,18 +51,42 @@ public:
 		VectorXd p_(diff);
 		double d;
 		double a1,a2;
-		for(int i=0;i<size;i++){//’†S·•ª
-
-			d=interval(i);
-			p_=p;
-			p_(i)+=d;
-			evaluateFunction(p_,a1);
-			p_(i)-=2*d;
-			evaluateFunction(p_,a2);
-			diff(i)=(a2-a1)/(2*d);
+		if(method==0){
+			for(int i=0;i<size;i++){//’†S·•ª
+				d=interval(i);
+				p_=p;
+				p_(i)+=d;
+				evaluateFunction(p_,a1);
+				p_(i)-=2*d;
+				evaluateFunction(p_,a2);
+				diff(i)=-(a2-a1)/(2*d);
+			}
 		}
+		else if (method > 0) {
+			for (int i = 0; i < size; i++) {//‘O•û·•ª
+				d = interval(i);
+				p_ = p;
+				p_(i) += d;
+				evaluateFunction(p_, a1);
+
+				diff(i) =- (ans - a1) / (d);
+			}
+		}
+		else {
+			for (int i = 0; i < size; i++) {//Œã•û·•ª
+				d = interval(i);
+				p_ = p;
+				p_(i) -= d;
+				evaluateFunction(p_, a1);
+
+				diff(i) = -(a1-ans) / (d);
+			}
+		}
+
 		return true;
 	};
+
+	int method = 0;
 
 };
 
