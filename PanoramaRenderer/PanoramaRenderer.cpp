@@ -1242,10 +1242,11 @@ void display(float*& vertex, unsigned int*& face, float*& reflectance, int meshN
 		}if (index3 >= vertNum) {
 			continue;
 		}
-		double thres = 0.4;
+	//	if vertex[index1 * 3 + ] - vertex[index2 * 3 + 1]);
+		double thres = 1.0;
 		if (vertex[index1 * 3 + 2] < thres || vertex[index2 * 3 + 2] < thres || vertex[index3 * 3 + 2] < thres)continue;//近距離はレンダリングしない（およそladybugの半径分）
-		if (vertex[index1 * 3 + 1] < PI_VAL / 179 || vertex[index2 * 3 + 1] < PI_VAL / 179 || vertex[index3 * 3 + 1] < PI_VAL / 179)continue;
-		if (vertex[index1 * 3 + 1] > PI_VAL - PI_VAL / 179 || vertex[index2 * 3 + 1] > PI_VAL - PI_VAL / 179 || vertex[index3 * 3 + 1] > PI_VAL - PI_VAL / 179)continue;
+		//if (vertex[index1 * 3 + 1] < PI_VAL / 179 || vertex[index2 * 3 + 1] < PI_VAL / 179 || vertex[index3 * 3 + 1] < PI_VAL / 179)continue;
+		//if (vertex[index1 * 3 + 1] > PI_VAL - PI_VAL / 179 || vertex[index2 * 3 + 1] > PI_VAL - PI_VAL / 179 || vertex[index3 * 3 + 1] > PI_VAL - PI_VAL / 179)continue;
 		GLfloat gr;
 		//パノラマ端点の処理
 		if (vertex[index1 * 3] * vertex[index2 * 3] < 0 && vertex[index1 * 3] * vertex[index3 * 3]>0 && abs(vertex[index1 * 3]) > PI_VAL / 2) {
@@ -1338,6 +1339,7 @@ void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int m
 	GLdouble ox, oy, oz;
 	glBegin(GL_TRIANGLES);
 	for (int i = 0; i < meshNum; i++) {
+
 		int index1 = face[i * 3];
 		int index2 = face[i * 3 + 1];
 		int index3 = face[i * 3 + 2];
@@ -1348,14 +1350,17 @@ void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int m
 		}if (index3 > vertNum) {
 			continue;
 		}
-		double thres = 0.0001;
+
+
+
+		double thres = 0.4;
 		if (vertex[index1 * 3 + 2] < thres || vertex[index2 * 3 + 2] < thres || vertex[index3 * 3 + 2] < thres)continue;//近距離はレンダリングしない（およそladybugの半径分）
-		if (vertex[index1 * 3 + 1] < PI_VAL / 359 || vertex[index2 * 3 + 1] < PI_VAL / 359 || vertex[index3 * 3 + 1] < PI_VAL / 359)continue;
-		if (vertex[index1 * 3 + 1] > PI_VAL - PI_VAL / 359 || vertex[index2 * 3 + 1] > PI_VAL - PI_VAL / 359 || vertex[index3 * 3 + 1] > PI_VAL - PI_VAL / 359)continue;
+		//if (vertex[index1 * 3 + 1] < PI_VAL / 359 || vertex[index2 * 3 + 1] < PI_VAL / 359 || vertex[index3 * 3 + 1] < PI_VAL / 359)continue;
+		//if (vertex[index1 * 3 + 1] > PI_VAL - PI_VAL / 359 || vertex[index2 * 3 + 1] > PI_VAL - PI_VAL / 359 || vertex[index3 * 3 + 1] > PI_VAL - PI_VAL / 359)continue;
 		//if (vertex[index1 * 3 + 1] == vertex[index1 * 3 + 2]||||)continue;
 		GLfloat gr;
 		//パノラマ端点の処理
-		if (vertex[index1 * 3] * vertex[index2 * 3] < 0 && vertex[index1 * 3] * vertex[index3 * 3]>0 && abs(vertex[index1 * 3]) > PI_VAL / 2) {
+		if (vertex[index1 * 3] * vertex[index2 * 3] < 0 && vertex[index1 * 3] * vertex[index3 * 3]>0 && fabs(vertex[index1 * 3]) > PI_VAL / 2) {
 			double val = vertex[index2 * 3] < 0 ? PI_VAL * 2 : -PI_VAL * 2;
 			//gr=reflectance[index1];
 
@@ -1376,8 +1381,18 @@ void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int m
 			//gr=reflectance[index3];
 			glColor3ub(rgba[index3 * 4], rgba[index3 * 4 + 1], rgba[index3 * 4 + 2]);
 			glVertex3f(vertex[index3 * 3] - val, vertex[index3 * 3 + 1], vertex[index3 * 3 + 2]);
+			if (fabs(vertex[index1 * 3+1] - vertex[index2 * 3+1]) > PI_VAL / 2) {
+				cout << vertex[index1 * 3] << endl;
+				cout << vertex[index2 * 3] << endl;
+				cout << vertex[index3 * 3] << endl;
+				cout << vertex[index1 * 3 + 1] << endl;
+				cout << vertex[index2 * 3 + 1] << endl;
+				cout << vertex[index3 * 3 + 1] << endl;
+			};
+
+
 		}
-		else if (vertex[index1 * 3] * vertex[index3 * 3] < 0 && vertex[index1 * 3] * vertex[index2 * 3]>0 && abs(vertex[index1 * 3]) > PI_VAL / 2) {
+		else if (vertex[index1 * 3] * vertex[index3 * 3] < 0 && vertex[index1 * 3] * vertex[index2 * 3]>0 && fabs(vertex[index1 * 3]) > PI_VAL / 2) {
 			double val = vertex[index3 * 3] < 0 ? PI_VAL * 2 : -PI_VAL * 2;
 			//gr=reflectance[index1];
 
@@ -1399,7 +1414,7 @@ void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int m
 			glColor3ub(rgba[index3 * 4], rgba[index3 * 4 + 1], rgba[index3 * 4 + 2]);
 			glVertex3f(vertex[index3 * 3], vertex[index3 * 3 + 1], vertex[index3 * 3 + 2]);
 		}
-		else if (vertex[index1 * 3] * vertex[index3 * 3] < 0 && vertex[index2 * 3] * vertex[index3 * 3]>0 && abs(vertex[index1 * 3]) > PI_VAL / 2) {
+		else if (vertex[index1 * 3] * vertex[index3 * 3] < 0 && vertex[index2 * 3] * vertex[index3 * 3]>0 && fabs(vertex[index1 * 3]) > PI_VAL / 2) {
 			double val = vertex[index1 * 3] < 0 ? PI_VAL * 2 : -PI_VAL * 2;
 			//gr=reflectance[index1];
 			glColor3ub(rgba[index1 * 4], rgba[index1 * 4 + 1], rgba[index1 * 4 + 2]);
@@ -1430,9 +1445,7 @@ void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int m
 			//gr=reflectance[index3];
 			glColor3ub(rgba[index3 * 4], rgba[index3 * 4 + 1], rgba[index3 * 4 + 2]);
 			glVertex3f(vertex[index3 * 3], vertex[index3 * 3 + 1], vertex[index3 * 3 + 2]);
-
 		}
-
 	}
 	glEnd();
 
@@ -1478,6 +1491,10 @@ void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParam
 	Vector3d tp = tp_.block(0, 0, 3, 1);
 	float r = sqrt(tp.dot(tp));
 	float phi = acos(tp(2, 0) / r);//
+	if (isnan(phi)) {
+		if(tp(2, 0)>0)phi = 0;
+		else phi = PI_VAL;
+	}
 	float theta = atan2(tp(1, 0), tp(0, 0));
 	ret_ << -theta, phi, r;
 }

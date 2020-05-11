@@ -210,6 +210,293 @@ bool BasicPly::readPlyFile(vector<string> fileName,int dataNum){
 }
 
 
+bool BasicPly::readPlyFile_(string fileName) {
+	ifstream ifs(fileName, ios::binary);
+	string line;
+	string format;
+	int n = 0;
+	int xi = -1, yi = -1, zi = -1;
+	int ri = -1, redi = -1, bluei = -1, greeni = -1;
+	int paranum = 0;
+	int vertex = 0;
+	int face = 0;
+	int matIdx = 0;
+	vector<PROP> props;
+	vector<int> paramidx;
+	while (getline(ifs, line)) {
+		cout << line << endl;
+		if (headString(line, "format")) {
+			format = line.erase(0, 7);
+		}
+		if (headString(line, "end_header"))break;
+		if (headString(line, "property")) {
+
+			line.erase(0, 9);
+			if (headString(line, "float")) {
+				line.erase(0, 6);
+				if (headString(line, "x")) {
+					xi = paranum; props.push_back(PROP_XF); paramidx.push_back(xi);
+				}
+				else if (headString(line, "y")) {
+					yi = paranum; props.push_back(PROP_YF); paramidx.push_back(yi);
+				}
+				else if (headString(line, "z")) {
+					zi = paranum; props.push_back(PROP_ZF); paramidx.push_back(zi);
+				}
+				else if (headString(line, "intensity")) {
+					ri = paranum; props.push_back(PROP_INTENSITY); paramidx.push_back(ri);
+				}
+				else if (headString(line, "confidence"));
+				//				else return false;
+				paranum += 4;
+			}
+			else if (headString(line, "double")) {
+				line.erase(0, 7);
+				if (headString(line, "x")) {
+					xi = paranum; props.push_back(PROP_XD); paramidx.push_back(xi);
+				}
+				else if (headString(line, "y")) {
+					yi = paranum; props.push_back(PROP_YD); paramidx.push_back(yi);
+				}
+				else if (headString(line, "z")) {
+					zi = paranum; props.push_back(PROP_ZD); paramidx.push_back(zi);
+				}
+				else if (headString(line, "intensity")) {
+					ri = paranum; props.push_back(PROP_INTENSITY); paramidx.push_back(ri);
+				}
+				else if (headString(line, "confidence"));
+				//else return false;
+				paranum += 8;
+			}
+			else if (headString(line, "uchar")) {
+				line.erase(0, 6);
+				if (headString(line, "red")) {
+					redi = paranum; props.push_back(PROP_R); paramidx.push_back(redi);
+				}
+				else if (headString(line, "blue")) {
+					bluei = paranum; props.push_back(PROP_B); paramidx.push_back(bluei);
+				}
+				else if (headString(line, "green")) {
+					greeni = paranum; props.push_back(PROP_G); paramidx.push_back(greeni);
+				}
+				//else if (headString(line, "intensity"))ri = paranum;
+				//else if (headString(line, "confidence"));
+				paranum += 1;
+			}
+			//			else return false;
+
+		}
+		if (headString(line, "element")) {
+			line.erase(0, 8);
+			if (headString(line, "vertex")) {
+				line.erase(0, 7);
+				vertex = stoi(line);
+
+			}
+			if (headString(line, "face")) {
+				line.erase(0, 5);
+				face = stoi(line);
+			}
+		}
+		if (headString(line, "matrix")) {
+			float f[4];
+
+			for (int i = 0; i < 5; i++) {
+				line.erase(0, line.find_first_not_of(" "));
+				if (i > 0)f[i - 1] = stof(line.substr(0, line.find_first_of(" ")));
+				line.erase(0, line.find_first_of(" "));
+			}
+			GlobalPose(0, matIdx) = f[0];
+			GlobalPose(1, matIdx) = f[1];
+			GlobalPose(2, matIdx) = f[2];
+			GlobalPose(3, matIdx) = f[3];
+			matIdx++;
+		}
+	}
+
+	if (xi >= yi || yi >= zi)return false;
+	float a = 0;
+	int time = 0;
+	int num = 0;
+	verteces = (float*)malloc(sizeof(float)*vertex * 3);
+	faces = (unsigned int*)malloc(sizeof(unsigned int)*(face * 3));
+
+	if (ri >= 0) {
+		reflectance = (float*)malloc(sizeof(float)*vertex);
+		bG = true;
+	}
+	if (redi >= 0) {
+		rgba = (unsigned char*)malloc(sizeof(char)*(vertex * 4));
+		bC = true;
+	}
+
+
+	if (headString(format, "binary_little_endian")) {
+		ifstream::pos_type beg = ifs.tellg();
+		while (n < vertex && !ifs.eof()) {
+			auto itrp = paramidx.begin();
+			float f;
+			double d;
+			unsigned char col;
+			int cnt = 0;
+			for (auto itr : props) {
+				switch (itr) {
+				case PROP_XF:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&f, sizeof(float));
+					verteces[n * 3] = f;
+					cnt += 4;
+					itrp++;
+					break;
+				case PROP_YF:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&f, sizeof(float));
+					verteces[n * 3 + 1] = f;
+					cnt += 4;
+					itrp++;
+					break;
+				case PROP_ZF:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&f, sizeof(float));
+					verteces[n * 3 + 2] = f;
+					cnt += 4;
+					itrp++;
+					break;
+				case PROP_XD:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&d, sizeof(double));
+					verteces[n * 3] = d;
+					cnt += 8;
+					itrp++;
+					break;
+				case PROP_YD:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&d, sizeof(double));
+					verteces[n * 3 + 1] = d;
+					cnt += 8;
+					itrp++;
+					break;
+				case PROP_ZD:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&d, sizeof(double));
+					verteces[n * 3 + 2] = d;
+					cnt += 8;
+					itrp++;
+					break;
+				case PROP_INTENSITY:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&f, sizeof(float));
+					reflectance[n] = f;
+					cnt += 4;
+					itrp++;
+					break;
+				case PROP_R:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&col, sizeof(unsigned char));
+					rgba[n * 4] = col;
+					cnt += 1;
+					itrp++;
+					break;
+				case PROP_G:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&col, sizeof(unsigned char));
+					rgba[n * 4 + 1] = col;
+					cnt += 1;
+					itrp++;
+					break;
+				case PROP_B:
+					if (cnt != (*itrp)) {
+						ifs.seekg((*itrp) - cnt, ios_base::cur);
+						cnt = (*itrp);
+					}
+					ifs.read((char *)&col, sizeof(unsigned char));
+					rgba[n * 4 + 2] = col;
+					cnt += 1;
+					itrp++;
+					break;
+				default:;
+				}
+
+
+
+			}
+			if (paranum - cnt > 0)ifs.seekg((paranum - cnt), ios_base::cur);
+			n++;
+		}
+		int facec = 0;
+		while (facec < face && !ifs.eof()) {
+			unsigned char i;
+			int id1, id2, id3;
+			ifs.read((char *)&i, sizeof(unsigned char));
+			ifs.read((char *)&id1, sizeof(int));
+			ifs.read((char *)&id2, sizeof(int));
+			ifs.read((char *)&id3, sizeof(int));
+
+			//	cout << i <<endl << id1 << id2 << id3 << endl;
+
+			faces[facec * 3] = id1;
+			faces[facec * 3 + 1] = id2;
+			faces[facec * 3 + 2] = id3;
+
+			facec++;
+
+			if (ifs.eof())
+				id2 = 0;
+		}
+		facenum = facec;
+	}
+	if (headString(format, "ascii")) {
+		return false;
+		while (n < vertex && !ifs.eof()) {
+			float f[5];
+			getline(ifs, line);
+			int i;
+			for (i = 0; i < 5; i++) {
+				if (i != 4)f[i] = stof(line.substr(0, line.find_first_of(" ")));
+				else f[i] = stof(line);
+				line.erase(0, line.find_first_of(" ") + 1);
+			}
+			verteces[n * 3] = f[xi];
+			verteces[n * 3 + 1] = f[yi];
+			verteces[n * 3 + 2] = f[zi];
+			n++;
+		}
+	}
+	//	vertPointDataSize = paranum;
+	vertexnum = n;
+
+	ifs.close();
+	return true;
+}
+
+
 bool BasicPly::readPlyFileRGB(vector<string> fileName,int dataNum){
 	
 	int rf=0;
@@ -1186,4 +1473,58 @@ void BasicPly::computeNorm() {
 		
 	}
 
+}
+
+
+void BasicPly::writePlyFileAuto(string fileName) {
+	ofstream ofs(fileName, ios::out | ios::binary);
+	ofs << "ply" << endl;
+	ofs << "format binary_little_endian 1.0" << endl;
+	ofs << "element vertex " << vertexnum << endl;
+	ofs << "property float x" << endl;
+	ofs << "property float y" << endl;
+	ofs << "property float z" << endl;
+	ofs << "property float confidence" << endl;
+	if (bG)ofs << "property float intensity" << endl;
+	if (bC) {
+		ofs << "property uchar red" << endl;
+		ofs << "property uchar green" << endl;
+		ofs << "property uchar blue" << endl;
+		ofs << "property uchar alpha" << endl;
+	}
+	ofs << "element face " << facenum << endl;
+	ofs << "property list uchar int vertex_index" << endl;
+	ofs << "end_header" << endl;
+	int time;
+	int i;
+	for (i = 0; i < vertexnum; i++) {
+
+		float fa[5];
+		fa[0] = verteces[i * 3];
+		fa[1] = verteces[i * 3 + 1];
+		fa[2] = verteces[i * 3 + 2];
+		fa[3] = 1.0f;
+		for (time = 0; time < 4; time++) {
+			ofs.write((char *)&fa[time], sizeof(float));
+		}
+		if (bG) {
+			fa[4] = reflectance[i];
+			ofs.write((char *)&fa[4], sizeof(float));
+		}
+		if (bC) {
+			ofs.write((char *)&rgba[i * 4], sizeof(char));
+			ofs.write((char *)&rgba[i * 4 + 1], sizeof(char));
+			ofs.write((char *)&rgba[i * 4 + 2], sizeof(char));
+			ofs.write((char *)&rgba[i * 4 + 3], sizeof(char));
+		}
+	}
+	unsigned char ftri = 3;
+	for (i = 0; i < facenum; i++) {
+		ofs.write((char *)&ftri, sizeof(char));
+		ofs.write((char *)&faces[i * 3], sizeof(int));
+		ofs.write((char *)&faces[i * 3 + 1], sizeof(int));
+		ofs.write((char *)&faces[i * 3 + 2], sizeof(int));
+
+	}
+	ofs.close();
 }
