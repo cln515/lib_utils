@@ -150,7 +150,7 @@ double get_point2lineDistance(Vector3d& p1,Vector3d& v1,Vector3d& p2);
 
 string getTimeStamp();
 
-
+void HSVAngle2Color(double radangle, unsigned char* rgb);
 
 #endif
 

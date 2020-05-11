@@ -611,3 +611,46 @@ string getTimeStamp() {
 	string ts(buffer);
 	return ts;
 }
+
+void HSVAngle2Color(double radangle, unsigned char* rgb) {
+	double pi_sixtydig = M_PI / 3;
+	double angle = ((radangle / (M_PI * 2)) - (int)(radangle / (M_PI * 2)))*(M_PI * 2);
+	if (angle >= 0 && angle < pi_sixtydig) {
+		double val = (angle - pi_sixtydig * 0) / pi_sixtydig;
+		rgb[0] = 255;
+		rgb[1] = 255 * val;
+		rgb[2] = 0;
+	}
+	else if (angle >= pi_sixtydig * 1 && angle < pi_sixtydig * 2) {
+		double val = (angle - pi_sixtydig * 1) / pi_sixtydig;
+		rgb[0] = 255 * (1 - val);
+		rgb[1] = 255;
+		rgb[2] = 0;
+	}
+	else if (angle >= pi_sixtydig * 2 && angle < pi_sixtydig * 3) {
+		double val = (angle - pi_sixtydig * 2) / pi_sixtydig;
+		rgb[0] = 0;
+		rgb[1] = 255;
+		rgb[2] = 255 * (val);
+	}
+	else if (angle >= pi_sixtydig * 3 && angle < pi_sixtydig * 4) {
+		double val = (angle - pi_sixtydig * 3) / pi_sixtydig;
+		rgb[0] = 0;
+		rgb[1] = 255 * (1 - val);
+		rgb[2] = 255;
+	}
+	else if (angle >= pi_sixtydig * 4 && angle < pi_sixtydig * 5) {
+		double val = (angle - pi_sixtydig * 4) / pi_sixtydig;
+		rgb[0] = 255 * (val);
+		rgb[1] = 0;
+		rgb[2] = 255;
+	}
+	else if (angle >= pi_sixtydig * 5 && angle < pi_sixtydig * 6) {
+		double val = (angle - pi_sixtydig * 5) / pi_sixtydig;
+		rgb[0] = 255;
+		rgb[1] = 0;
+		rgb[2] = 255 * (1 - val);
+	}
+
+
+}
