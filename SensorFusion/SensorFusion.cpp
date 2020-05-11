@@ -28,7 +28,6 @@ SensorFusion::Inputs SensorFusion::setFolder(std::string workFolder,std::string 
 		}else if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
 			fexist = true;   // this is a directory!
 		if (!fexist) {
-			//とりあえずshortcutのパス取得がポンコツだったので呪詛を書き込んどく COM使えない
 			std::string imageListBase_shortcut = workFolder + "\\images.txt";
 			ifstream ifs(imageListBase_shortcut);
 			getline(ifs, imageListBase);			
