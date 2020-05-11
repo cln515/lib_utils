@@ -354,19 +354,19 @@ namespace cv
 
 }
 
-void goodFeatureToTrack_onProjection(cv::Mat image, vector<cv::Point2f> proj_points, vector<int>& selectedIdx, double minDistance, int maxCorners,double cornerThres) {
+void goodFeatureToTrack_onProjection(cv::Mat image, vector<cv::Point2f> proj_points, vector<int>& selectedIdx, double minDistance, int maxCorners, double cornerThres) {
 	cv::Mat eig, tmp;
 	cv::cornerHarris(image, eig, 3, 5, 0.04);//corner calculation
 	cv::Mat tmpMask = cv::Mat::zeros(image.rows, image.cols, CV_8U);
 	map<unsigned int, int> point_idx;
 	map<unsigned int, double> point_dist;
-	for (int j = 0;j < proj_points.size();j++) {
+	for (int j = 0; j < proj_points.size(); j++) {
 		cv::Point2f p = proj_points.at(j);
 		unsigned int pint = ((int)p.x) + ((int)p.y)*image.cols;;
 		tmpMask.at<uchar>(p) = 255;//remove mask on projected point
 		double cendx = p.x - (int)p.x - 0.5;
 		double cendy = p.y - (int)p.y - 0.5;
-		double distcenter = cendx*cendx + cendy*cendy;
+		double distcenter = cendx * cendx + cendy * cendy;
 		auto itr = point_dist.find(pint);
 		if (itr == point_dist.end() || itr->second > distcenter) {
 			point_dist.insert(map<unsigned int, double>::value_type(pint, distcenter));
@@ -395,12 +395,12 @@ void goodFeatureToTrack_onProjection(cv::Mat image, vector<cv::Point2f> proj_poi
 		for (int x = 1; x < imgsize.width - 1; x++)
 		{
 			float val = eig_data[x];
-			if (val >= maxVal*cornerThres /*&& val == tmp_data[x]*/ && (!mask_data || mask_data[x]))
+			if (val >= maxVal * cornerThres /*&& val == tmp_data[x]*/ && (!mask_data || mask_data[x]))
 				tmpCorners.push_back(eig_data + x);
 		}
 	}
 	//cv::sort(tmpCorners,tmpCorners,CV_SORT_DESCENDING);
-	std::sort(tmpCorners.begin(), tmpCorners.end(), [](const float*& a, const float*& b) {return (*a) >= (*b);});
+	std::sort(tmpCorners.begin(), tmpCorners.end(), [](const float*& a, const float*& b) {return (*a) >= (*b); });
 
 	vector<cv::Point2f> corners;
 	size_t i, j, total = tmpCorners.size(), ncorners = 0;
@@ -422,7 +422,7 @@ void goodFeatureToTrack_onProjection(cv::Mat image, vector<cv::Point2f> proj_poi
 		{
 			int ofs = (int)((const uchar*)tmpCorners[i] - eig.data);
 			int y = (int)(ofs / eig.step);
-			int x = (int)((ofs - y*eig.step) / sizeof(float));
+			int x = (int)((ofs - y * eig.step) / sizeof(float));
 
 			bool good = true;
 
@@ -453,7 +453,7 @@ void goodFeatureToTrack_onProjection(cv::Mat image, vector<cv::Point2f> proj_poi
 							float dx = x - m[j].x;
 							float dy = y - m[j].y;
 
-							if (dx*dx + dy*dy < minDistance)
+							if (dx*dx + dy * dy < minDistance)
 							{
 								good = false;
 								goto break_out;
@@ -471,8 +471,15 @@ void goodFeatureToTrack_onProjection(cv::Mat image, vector<cv::Point2f> proj_poi
 				//    i,x, y, x_cell, y_cell, (int)minDistance, cell_size,x1,y1,x2,y2, grid_width,grid_height,c);
 				grid[y_cell*grid_width + x_cell].push_back(cv::Point2f((float)x, (float)y));
 
-				corners.push_back(cv::Point2f((float)x, (float)y));
-				++ncorners;
+				cv::Point2f p = cv::Point2f((float)x, (float)y);
+				unsigned int pint = ((int)p.x) + ((int)p.y)*image.cols;
+				auto itr2 = point_idx.find(pint);
+				if (itr2 != point_idx.end()) {
+					selectedIdx.push_back(point_idx.at(pint));
+					//					corners.push_back(p);
+					++ncorners;
+				}
+
 
 				if (maxCorners > 0 && (int)ncorners == maxCorners)
 					break;
@@ -485,23 +492,30 @@ void goodFeatureToTrack_onProjection(cv::Mat image, vector<cv::Point2f> proj_poi
 		{
 			int ofs = (int)((const uchar*)tmpCorners[i] - eig.data);
 			int y = (int)(ofs / eig.step);
-			int x = (int)((ofs - y*eig.step) / sizeof(float));
+			int x = (int)((ofs - y * eig.step) / sizeof(float));
 
-			corners.push_back(cv::Point2f((float)x, (float)y));
-			++ncorners;
+			cv::Point2f p = cv::Point2f((float)x, (float)y);
+			unsigned int pint = ((int)p.x) + ((int)p.y)*image.cols;
+			auto itr2 = point_idx.find(pint);
+			if (itr2 != point_idx.end()) {
+				selectedIdx.push_back(point_idx.at(pint));
+				//					corners.push_back(p);
+				++ncorners;
+			}
+
 			if (maxCorners > 0 && (int)ncorners == maxCorners)
 				break;
 		}
 	}
-	selectedIdx.clear();
-	for (int j = 0;j<corners.size();j++) {
-		cv::Point2f p = corners.at(j);
-		unsigned int pint = ((int)p.x) + ((int)p.y)*image.cols;
-		auto itr2 = point_idx.find(pint);
-		if (itr2 != point_idx.end()) {
-			selectedIdx.push_back(point_idx.at(pint));
-		}
-	}
+	//selectedIdx.clear();
+	//for (int j = 0;j<corners.size();j++) {
+	//	cv::Point2f p = corners.at(j);
+	//	unsigned int pint = ((int)p.x) + ((int)p.y)*image.cols;
+	//	auto itr2 = point_idx.find(pint);
+	//	if (itr2 != point_idx.end()) {
+	//		selectedIdx.push_back(point_idx.at(pint));
+	//	}
+	//}
 
 
 }
