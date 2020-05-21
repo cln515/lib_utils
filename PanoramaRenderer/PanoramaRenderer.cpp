@@ -532,26 +532,112 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 
 	GLint view[4];
-	Init(viewWidth_,viewHeight_, depthResolution);
-	glGetIntegerv(GL_VIEWPORT, view);
-	for (int i = 0; i < dataNum; i++) {
-		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
-		float* vertexp = vertexPointers[i];
-		for (int j = 0; j < vtNumArray[i]; j++) {
-			Vector3d tp;
-			Vector3d pp;
-			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
 
-			sphericalTrans_renderer(tp, pp, cameraParam);
-			trsVert[j * 3] = (float)tp(0, 0);
-			trsVert[j * 3 + 1] = (float)tp(1, 0);
-			trsVert[j * 3 + 2] = (float)tp(2, 0);
-			//			cout<<tp<<endl;
+	if (type == PERSPECTIVE) {
+		InitPers(viewWidth_, viewHeight_, znear, depthResolution, intrinsic);
+		glGetIntegerv(GL_VIEWPORT, view);
+		for (int i = 0; i < dataNum; i++) {
+			float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+			float* vertexp = vertexPointers[i];
+			for (int j = 0; j < vtNumArray[i]; j++) {
+				Vector3d tp;
+				Vector3d pp;
+				pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+
+				Vector4d pt_;
+				pt_ << pp(0), pp(1), pp(2), 1;
+				Vector4d tp_ = cameraParam * pt_;
+
+				trsVert[j * 3] = (float)tp_(0);
+				trsVert[j * 3 + 1] = (float)tp_(1);
+				trsVert[j * 3 + 2] = (float)tp_(2);
+
+			}
+
+			const GLfloat lightPos[] = { 0 , 0 , 0 , 1.0 };
+			const GLfloat lightCol[] = { 1 , 0 , 0 , 1.0 };
+
+
+			//float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+			glBegin(GL_TRIANGLES);
+			for (int j = 0; j < meshNumArray[i]; j++) {
+				int index1 = facePointers[i][j * 3];
+				int index2 = facePointers[i][j * 3 + 1];
+				int index3 = facePointers[i][j * 3 + 2];
+
+				glColor3ub(rgbaPointers[i][index1 * 4], rgbaPointers[i][index1 * 4 + 1], rgbaPointers[i][index1 * 4 + 2]);
+				glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
+				glColor3ub(rgbaPointers[i][index2 * 4], rgbaPointers[i][index2 * 4 + 1], rgbaPointers[i][index2 * 4 + 2]);
+				glVertex3f(trsVert[index2 * 3], trsVert[index2 * 3 + 1], trsVert[index2 * 3 + 2]);
+				glColor3ub(rgbaPointers[i][index3 * 4], rgbaPointers[i][index3 * 4 + 1], rgbaPointers[i][index3 * 4 + 2]);
+				glVertex3f(trsVert[index3 * 3], trsVert[index3 * 3 + 1], trsVert[index3 * 3 + 2]);
+				//cout << trsVert[index3 * 3] << "," << trsVert[index3 * 3 + 1] << "," << trsVert[index3 * 3 + 2] << "," << endl;
+			}
+			glEnd();
+
+			free(trsVert);
 		}
-		displayrgb(trsVert, facePointers[i], rgbaPointers[i], meshNumArray[i], vtNumArray[i]);
-		free(trsVert);
 	}
+	else if (type == FISHEYE) {
+		InitFE(viewWidth_, viewHeight_, depthResolution);
+		glGetIntegerv(GL_VIEWPORT, view);
+		for (int i = 0; i < dataNum; i++) {
+			float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+			float* vertexp = vertexPointers[i];
 
+			for (int j = 0; j < vtNumArray[i]; j++) {
+				Vector3d tp;
+				Vector3d pp;
+				pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+
+				fisheyeTrans_renderer(tp, pp, cameraParam);
+				trsVert[j * 3] = (float)tp(0, 0);
+				trsVert[j * 3 + 1] = (float)tp(1, 0);
+				trsVert[j * 3 + 2] = (float)tp(2, 0);
+				//	cout<<tp<<","<<endl;
+			}
+			glBegin(GL_TRIANGLES);
+			for (int j = 0; j < meshNumArray[i]; j++) {
+
+				int index1 = facePointers[i][j * 3];
+				int index2 = facePointers[i][j * 3 + 1];
+				int index3 = facePointers[i][j * 3 + 2];
+
+
+				glColor3ub(rgbaPointers[i][index1 * 4], rgbaPointers[i][index1 * 4 + 1], rgbaPointers[i][index1 * 4 + 2]);
+				glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
+				glColor3ub(rgbaPointers[i][index2 * 4], rgbaPointers[i][index2 * 4 + 1], rgbaPointers[i][index2 * 4 + 2]);
+				glVertex3f(trsVert[index2 * 3], trsVert[index2 * 3 + 1], trsVert[index2 * 3 + 2]);
+				glColor3ub(rgbaPointers[i][index3 * 4], rgbaPointers[i][index3 * 4 + 1], rgbaPointers[i][index3 * 4 + 2]);
+				glVertex3f(trsVert[index3 * 3], trsVert[index3 * 3 + 1], trsVert[index3 * 3 + 2]);
+
+			}
+			glEnd();
+
+			free(trsVert);
+		}
+	}
+	else {
+		Init(viewWidth_, viewHeight_, depthResolution);
+		glGetIntegerv(GL_VIEWPORT, view);
+		for (int i = 0; i < dataNum; i++) {
+			float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+			float* vertexp = vertexPointers[i];
+			for (int j = 0; j < vtNumArray[i]; j++) {
+				Vector3d tp;
+				Vector3d pp;
+				pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+
+				sphericalTrans_renderer(tp, pp, cameraParam);
+				trsVert[j * 3] = (float)tp(0, 0);
+				trsVert[j * 3 + 1] = (float)tp(1, 0);
+				trsVert[j * 3 + 2] = (float)tp(2, 0);
+				//			cout<<tp<<endl;
+			}
+			displayrgb(trsVert, facePointers[i], rgbaPointers[i], meshNumArray[i], vtNumArray[i]);
+			free(trsVert);
+		}
+	}
 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
 	//	SelectObject(dhdc,m_hbitmap_old);
 	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
