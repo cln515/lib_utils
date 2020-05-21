@@ -654,3 +654,24 @@ void HSVAngle2Color(double radangle, unsigned char* rgb) {
 
 
 }
+
+
+Matrix4d lookat2matrix(double* lookatParam) {
+	Vector3d pos, lookat, upper;
+	pos << lookatParam[0], lookatParam[1], lookatParam[2];
+	lookat << lookatParam[3], lookatParam[4], lookatParam[5];
+	upper << lookatParam[6], lookatParam[7], lookatParam[8];
+
+	lookat = lookat - pos;
+	Vector3d r1, r2, r3;
+	r3 = lookat;
+	r2 = -upper;
+	r1 = r2.cross(r3);
+	Matrix4d ret = Matrix4d::Identity();
+	ret.block(0,0,3,1) = r1;
+	ret.block(0, 1, 3, 1) = r2;
+	ret.block(0, 2, 3, 1) = r3;
+	ret.block(0, 3, 3, 1) = pos;
+
+	return ret;
+}

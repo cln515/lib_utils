@@ -152,6 +152,8 @@ string getTimeStamp();
 
 void HSVAngle2Color(double radangle, unsigned char* rgb);
 
+Matrix4d lookat2matrix(double* lookatParam);
+
 #endif
 
 
