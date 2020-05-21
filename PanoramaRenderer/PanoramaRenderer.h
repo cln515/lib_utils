@@ -28,6 +28,13 @@ using namespace Eigen;
 using namespace std;
 #ifndef PANORAMA_RENDERER
 #define  PANORAMA_RENDERER
+
+enum render_type {
+	PERSPECTIVE,
+	PANORAMA,
+	FISHEYE
+};
+
 class PanoramaRenderer {
 protected:
 	float** vertexPointers;
@@ -46,11 +53,18 @@ protected:
 	double depthResolution;
 	static int viewHeight_;
 	static int viewWidth_;
-	bool persRender = false;
+
+
+
+//	bool persRender = false;
+	render_type type;
+
 	double intrinsic[4];
 	double znear;
 public:
-	PanoramaRenderer() { dataNum = 0; bNormalImage = false; depthResolution = 20.0; znear = 0.3; };
+
+
+	PanoramaRenderer() { dataNum = 0; bNormalImage = false; depthResolution = 20.0; znear = 0.3; type = PANORAMA; };
 	void setDepthFarClip(double depthResolution_) { depthResolution = depthResolution_; }
 	void setData(float* vertex, unsigned int* face, float* reflectance, int vertNum, int meshNum);
 	void setOutputNorm(bool bNormalImage_) { bNormalImage = bNormalImage_; };
@@ -86,12 +100,13 @@ public:
 	void createContext(int viewWidth_,int viewHeight_);
 	static void getViewSize(int& w, int &h) { w = viewWidth_; h = viewHeight_; };
 	void setPersRender(double cx,double cy,double fx,double fy) {
-		persRender=true; 
+		type=PERSPECTIVE; 
 		intrinsic[0] = cx;
 		intrinsic[1] = cy;
 		intrinsic[2] = fx;
 		intrinsic[3] = fy;
 	};
+	void setFisheye() { type = FISHEYE; };
 	void getPersRender(double& cx, double& cy, double& fx, double& fy, double& zn, double& zf) {
 		cx = intrinsic[0];
 		cy = intrinsic[1];
@@ -100,7 +115,8 @@ public:
 		zn = znear;
 		zf = znear + depthResolution;
 	};
-	bool isPers() { return persRender; };
+	bool isPers() { return type==PERSPECTIVE; };
+	render_type getType() { return type; }
 };
 
 #endif
