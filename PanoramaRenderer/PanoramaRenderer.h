@@ -51,10 +51,10 @@ protected:
 	GLfloat* normArray = NULL;
 	bool bNormalImage;
 	double depthResolution;
-	static int viewHeight_;
-	static int viewWidth_;
-
-
+	static int viewHeight_stat;
+	static int viewWidth_stat;
+	int viewWidth_;
+	int viewHeight_;
 
 //	bool persRender = false;
 	render_type type;
@@ -98,7 +98,15 @@ public:
 		return depthResolution;
 	};
 	void createContext(int viewWidth_,int viewHeight_);
-	static void getViewSize(int& w, int &h) { w = viewWidth_; h = viewHeight_; };
+	void createContext();
+	void discardContext();
+	static void getViewSize(int& w, int &h) { w = viewWidth_stat; h = viewHeight_stat; };
+	void setUniqueViewSize(int w,int h){
+		viewWidth_ = w;
+		viewHeight_ = w;
+	}
+	void getUniqueViewSize(int& w, int &h) { w = viewWidth_; h = viewHeight_; };
+	
 	void setPersRender(double cx,double cy,double fx,double fy) {
 		type=PERSPECTIVE; 
 		intrinsic[0] = cx;
@@ -117,6 +125,10 @@ public:
 	};
 	bool isPers() { return type==PERSPECTIVE; };
 	render_type getType() { return type; }
+private:
+	HDC		_hdc_;
+	HBITMAP m_hbitmap;
+	HGLRC	_hrc;
 };
 
 #endif

@@ -469,11 +469,19 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 	//	cout<<tp<<","<<endl;
 			}
 			glBegin(GL_TRIANGLES);
+			double thresh = (M_PI * 3 / 4)*(M_PI * 3 / 4);
 			for (int j = 0; j < meshNumArray[i]; j++) {
 				
 				int index1 = facePointers[i][j * 3];
 				int index2 = facePointers[i][j * 3 + 1];
 				int index3 = facePointers[i][j * 3 + 2];
+
+				double r1, r2, r3;
+				r1 = trsVert[index1 * 3] * trsVert[index1 * 3] + trsVert[index1 * 3 + 1] * trsVert[index1 * 3 + 1];
+				r2 = trsVert[index2 * 3] * trsVert[index2 * 3] + trsVert[index2 * 3 + 1] * trsVert[index2 * 3 + 1];
+				r3 = trsVert[index3 * 3] * trsVert[index3 * 3] + trsVert[index3 * 3 + 1] * trsVert[index3 * 3 + 1];
+				if (r1 > thresh || r2 > thresh && r3 > thresh)continue;
+
 				glColor3f(reflectancePointers[i][index1], reflectancePointers[i][index1], reflectancePointers[i][index1]);
 				glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
 				glColor3f(reflectancePointers[i][index2], reflectancePointers[i][index2], reflectancePointers[i][index2]);
@@ -560,10 +568,12 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 
 			//float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
 			glBegin(GL_TRIANGLES);
+
 			for (int j = 0; j < meshNumArray[i]; j++) {
 				int index1 = facePointers[i][j * 3];
 				int index2 = facePointers[i][j * 3 + 1];
 				int index3 = facePointers[i][j * 3 + 2];
+
 
 				glColor3ub(rgbaPointers[i][index1 * 4], rgbaPointers[i][index1 * 4 + 1], rgbaPointers[i][index1 * 4 + 2]);
 				glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
@@ -597,13 +607,18 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 				//	cout<<tp<<","<<endl;
 			}
 			glBegin(GL_TRIANGLES);
+			double thresh = (M_PI * 3 / 4)*(M_PI * 3 / 4);
 			for (int j = 0; j < meshNumArray[i]; j++) {
 
 				int index1 = facePointers[i][j * 3];
 				int index2 = facePointers[i][j * 3 + 1];
 				int index3 = facePointers[i][j * 3 + 2];
 
-
+				double r1, r2, r3;
+				r1 = trsVert[index1 * 3] * trsVert[index1 * 3] + trsVert[index1 * 3 + 1] * trsVert[index1 * 3 + 1];
+				r2 = trsVert[index2 * 3] * trsVert[index2 * 3] + trsVert[index2 * 3 + 1] * trsVert[index2 * 3 + 1];
+				r3 = trsVert[index3 * 3] * trsVert[index3 * 3] + trsVert[index3 * 3 + 1] * trsVert[index3 * 3 + 1];
+				if (r1 > thresh || r2 > thresh && r3 > thresh)continue;
 				glColor3ub(rgbaPointers[i][index1 * 4], rgbaPointers[i][index1 * 4 + 1], rgbaPointers[i][index1 * 4 + 2]);
 				glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
 				glColor3ub(rgbaPointers[i][index2 * 4], rgbaPointers[i][index2 * 4 + 1], rgbaPointers[i][index2 * 4 + 2]);
@@ -1763,10 +1778,13 @@ PFD_GENERIC_ACCELERATED,
 	};
 	GLint view[4];
 	HDC		_hdc_ = CreateCompatibleDC(NULL);
-	viewWidth_ = view_w;
-	viewHeight_ = view_h;
-	DWORD m_DIBWidth = viewWidth_;
-	DWORD m_DIBHeight = viewHeight_;
+	viewWidth_ = viewWidth_stat = view_w;
+	viewHeight_ = viewHeight_stat = view_h;
+
+
+
+	DWORD m_DIBWidth = viewWidth_stat;
+	DWORD m_DIBHeight = viewHeight_stat;
 	DWORD m_BPP = 24;
 
 	// Create BITMAPINFOHEADER
@@ -1801,8 +1819,77 @@ PFD_GENERIC_ACCELERATED,
 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
-
 }
 
-int PanoramaRenderer::viewWidth_;
-int PanoramaRenderer::viewHeight_;
+void PanoramaRenderer::createContext() {
+	PIXELFORMATDESCRIPTOR _pfd = {
+sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
+1,	//	Versin of this structure
+PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
+PFD_GENERIC_ACCELERATED,
+//		PFD_GENERIC_FORMAT,
+		//	Pixel buffer flags
+		PFD_TYPE_RGBA,	//	Type of pixel data
+		24,	//	The number of color bitplanes
+		0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
+		0, 0,	//	Number of alpha bitplanes and shift count
+		0, 0, 0, 0, 0,	//	Number of accumulation bits
+		32,	//	Z depth
+		0,	//	Stencil depth
+		0,	//	Number of auxiliary buffers
+		PFD_MAIN_PLANE,	//	Ignored
+		0,	//	Reserved
+		0,	//	Ignored
+		0,	//	Transparent color value
+		0,	//	Ignored
+	};
+	GLint view[4];
+	_hdc_ = CreateCompatibleDC(NULL);
+
+	DWORD m_DIBWidth = viewWidth_;
+	DWORD m_DIBHeight = viewHeight_;
+	DWORD m_BPP = 24;
+
+	// Create BITMAPINFOHEADER
+	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
+	int iSize = sizeof(BITMAPINFOHEADER);
+	::memset(m_PBIH, 0, iSize);
+
+	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
+	m_PBIH->biWidth = m_DIBWidth;
+	m_PBIH->biHeight = m_DIBHeight;
+	m_PBIH->biPlanes = 1;
+	m_PBIH->biBitCount = m_BPP;
+	m_PBIH->biCompression = BI_RGB;
+
+	// Create DIB
+	void* m_PBits;
+	HBITMAP m_hbitmap_old;
+	m_hbitmap = ::CreateDIBSection(
+		_hdc_,
+		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
+		&m_PBits, NULL, 0
+	);
+
+	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
+	DWORD dwLength;
+	if ((m_DIBWidth * 3) % 4 == 0) /* バッファの１ラインの長さを計算 */
+		dwLength = m_DIBWidth * 3;
+	else
+		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
+
+	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
+	::SetPixelFormat(_hdc_, _pfid, &_pfd);
+	_hrc = ::wglCreateContext(_hdc_);
+	::wglMakeCurrent(_hdc_, _hrc);
+}
+
+void  PanoramaRenderer::discardContext() {
+	if (FALSE == ::wglMakeCurrent(0, 0))exit(ERROR);
+	if (FALSE == ::wglDeleteContext(_hrc))exit(ERROR);
+	DeleteDC(_hdc_);
+	DeleteObject(m_hbitmap);
+}
+
+int PanoramaRenderer::viewWidth_stat;
+int PanoramaRenderer::viewHeight_stat;
