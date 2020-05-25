@@ -548,7 +548,7 @@ void rev_omniTrans(double phi, double theta, Vector3d& ret) {
 }
 
 bool makeFolder(string folderPath){
-	
+#if defined(WIN32) || defined(WIN64)
 	if (MakeSureDirectoryPathExists(folderPath.c_str())) {
 	    cout<<"succeeded."<<endl;
 		return true;
@@ -556,7 +556,7 @@ bool makeFolder(string folderPath){
 		cout<<"failed"<<endl;
 		return false;
 	}
-	
+#endif
 }
 
 Vector3d cubic_spline(Vector3d& p0,Vector3d& p1,Vector3d& p2,Vector3d& p3,double t0,double t1,double t2,double t3,double t){
