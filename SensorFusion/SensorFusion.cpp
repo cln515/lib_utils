@@ -107,6 +107,75 @@ SensorFusion::Inputs SensorFusion::setFolder(std::string workFolder,std::string 
 
 	return inputs;
 };
+
+void SensorFusion::setPointCloud(std::string folder) {
+	std::string pointFileBase = folder;	
+	std::string pointFileFirst = folder + ".dat";
+	
+	if (!PathFileExistsA(pointFileFirst.c_str())) {
+		std::string errorLog = pointFileFirst + " cannot be found!\n";
+		cout << errorLog << endl;
+		return;
+	}
+	//load image file name list
+	inputs.psl = new PointSequenceLoader();
+	inputs.psl->loadPointStream(pointFileBase);
+}
+
+void SensorFusion::setImage(std::string folder) {
+	inputs.imgFileNameList.clear();
+
+	std::string imageListBase = folder + "\\";
+	{
+		std::string imageListBase_ = folder;
+		DWORD ftyp = GetFileAttributesA(imageListBase_.c_str());
+
+		bool fexist;
+		fexist = false;    // this is not a directory!
+		if (ftyp == INVALID_FILE_ATTRIBUTES) {
+			fexist = false;  //something is wrong with your path!
+		}
+		else if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
+			fexist = true;   // this is a directory!		
+	}
+	imageBase = imageListBase;
+	//	cout << "short" << endl;
+	std::string imageList = imageListBase + "img.lst";
+	std::string imageTimeStamp = imageListBase + "timeStamp.dat";
+	//	cout << "short" << endl;
+
+	if (!PathFileExistsA(imageList.c_str())) {
+		std::string errorLog = imageList + " cannot be found!\n";
+		cout << errorLog << endl;
+		return;
+	}
+	if (!PathFileExistsA(imageTimeStamp.c_str())) {
+		std::string errorLog = imageTimeStamp + " cannot be found!\n";
+		cout << errorLog << endl;
+		return;
+	}
+
+	//load image file name list
+
+	std::ifstream ifs(imageList);
+	std::string str;
+	getline(ifs, str);
+
+	int imageNumber = 0;
+	imageNumber = stoi(str);
+	while (getline(ifs, str)) {
+		inputs.imgFileNameList.push_back(imageListBase + str);
+	}
+	ifs.close();
+
+	//load time stamp (image)
+	ifs.open(imageTimeStamp, std::ios::binary);
+	inputs.imTimeStamp = (double*)malloc(imageNumber * sizeof(double));
+	ifs.read((char*)inputs.imTimeStamp, imageNumber * sizeof(double));
+	ifs.close();
+}
+
+
 SensorFusion::Status SensorFusion::initialize(Status stat_) {
 	stat = stat_;
 	if (initializeFunc != NULL) {
