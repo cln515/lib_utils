@@ -122,7 +122,7 @@ void SensorFusion::setPointCloud(std::string folder) {
 	inputs.psl->loadPointStream(pointFileBase);
 }
 
-void SensorFusion::setImage(std::string folder) {
+void SensorFusion::setImage(std::string folder,std::string prefix) {
 	inputs.imgFileNameList.clear();
 
 	std::string imageListBase = folder + "\\";
@@ -140,8 +140,8 @@ void SensorFusion::setImage(std::string folder) {
 	}
 	imageBase = imageListBase;
 	//	cout << "short" << endl;
-	std::string imageList = imageListBase + "img.lst";
-	std::string imageTimeStamp = imageListBase + "timeStamp.dat";
+	std::string imageList = imageListBase + prefix + ".lst";
+	std::string imageTimeStamp = imageListBase + prefix + "_ts.dat";
 	//	cout << "short" << endl;
 
 	if (!PathFileExistsA(imageList.c_str())) {

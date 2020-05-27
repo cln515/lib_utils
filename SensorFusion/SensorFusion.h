@@ -57,7 +57,7 @@ public:
 	Inputs setFolder(std::string workFolder, std::string extCparaFile);
 
 	void setPointCloud(std::string pointCloudSequenceBase);
-	void setImage(std::string pointCloudFolder);
+	void setImage(std::string pointCloudFolder, std::string prefix);
 
 
 	Status initialize(Status init);
