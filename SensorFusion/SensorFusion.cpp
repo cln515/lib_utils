@@ -124,7 +124,7 @@ void SensorFusion::setPointCloud(std::string folder) {
 
 void SensorFusion::setImage(std::string folder,std::string prefix) {
 	inputs.imgFileNameList.clear();
-
+	cout << "short" << endl;
 	std::string imageListBase = folder + "\\";
 	{
 		std::string imageListBase_ = folder;
@@ -139,10 +139,10 @@ void SensorFusion::setImage(std::string folder,std::string prefix) {
 			fexist = true;   // this is a directory!		
 	}
 	imageBase = imageListBase;
-	//	cout << "short" << endl;
+
 	std::string imageList = imageListBase + prefix + ".lst";
 	std::string imageTimeStamp = imageListBase + prefix + "_ts.dat";
-	//	cout << "short" << endl;
+
 
 	if (!PathFileExistsA(imageList.c_str())) {
 		std::string errorLog = imageList + " cannot be found!\n";
@@ -172,6 +172,7 @@ void SensorFusion::setImage(std::string folder,std::string prefix) {
 	ifs.open(imageTimeStamp, std::ios::binary);
 	inputs.imTimeStamp = (double*)malloc(imageNumber * sizeof(double));
 	ifs.read((char*)inputs.imTimeStamp, imageNumber * sizeof(double));
+
 	ifs.close();
 }
 
