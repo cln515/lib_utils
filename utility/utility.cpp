@@ -535,6 +535,41 @@ void omniTrans(double x,double y, double z,double& phi_pix,double& theta_pix,int
 	phi_pix=phi/M_PI*height;
 };
 
+void FisheyeTrans(double x, double y, double z, double& u, double& v,
+ double ox,double oy,double f,double k1,double k2,double k3, double b1) {
+
+	if (z != 0) {
+		double x0 = x / z;
+		double y0 = y / z;
+		double r0 = sqrt(x0*x0 + y0 * y0);
+		if (z < 0)r0 = -r0;
+		double theta = atan(r0);
+		if (theta < 0)theta += M_PI;
+		double x_ = x0 / r0 * theta;
+		double y_ = y0 / r0 * theta;
+		double r = sqrt(x_ * x_ + y_ * y_);
+
+		double distv = (1 + k1 * std::pow(theta, 2) + k2 * std::pow(theta, 4) + k3 * std::pow(theta, 6));
+		double xd = x_ * distv;
+		double yd = y_ * distv;
+
+		u = ox + xd * f + xd + b1;
+		v = oy + yd * f;
+	}
+	else {
+		double theta = M_PI / 2;
+		double theta2 = theta * theta;
+		double theta4 = theta2 * theta2;
+		double theta6 = theta4 * theta2;
+		double distv = (1 + k1 * theta2 + k2 * theta4 + k3 * theta6);
+		double r = x*x + y*y;
+		double xd = (distv)*x;
+		double yd = (distv)*y;
+		u = ox + xd * f + xd + b1;
+		v = oy + yd * f;
+	}
+}
+
 void rev_omniTrans(double x2d,double y2d,int width,int height,Vector3d& ret){
 		double theta=-(x2d*(M_PI*2)/width-M_PI);
 		double phi=y2d/height*M_PI;
