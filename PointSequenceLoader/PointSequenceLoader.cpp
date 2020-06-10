@@ -458,7 +458,7 @@ void PointSequenceLoader::getPCReflectance(double* motionTime, _6dof* motion, Ma
 	}
 }
 
-
+#if USE_OPENCV
 void PointSequenceLoader::getPCColor(double* motionTime, _6dof* motion, Matrix4d& calib, int firstFrame, int lastFrame, vector<string>imgFileNameList, vector<float>& v, vector<uchar>& rgba, int skip) {
 
 	ifs->close();
@@ -555,3 +555,4 @@ void PointSequenceLoader::getPCColor(double* motionTime, _6dof* motion, Matrix4d
 	}
 
 };
+#endif

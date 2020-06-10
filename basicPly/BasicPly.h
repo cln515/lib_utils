@@ -74,6 +74,9 @@ public:
 	bool readPlyFileRGB(vector<string> fileName,int dataNum);
 	bool readPlyFile_(string fileName);
 
+	bool isReflectance() { return bG; }
+	bool isColor() { return bC; }
+
 	void panoramaTexture(unsigned char* rgbArray,int width,int height,Matrix4d& transMat);
 
 	int getVertexNumber(){return vertexnum;};
@@ -81,11 +84,11 @@ public:
 	void release();
 	float* getVertecesPointer(){return verteces;};
 	void setVertecesPointer(float* vertices,int vtnum){verteces=vertices;vertexnum=vtnum;};
-	void setRgbaPointer(unsigned char* rgba_, int vtnum) { rgba = rgba_;vertexnum = vtnum; };
+	void setRgbaPointer(unsigned char* rgba_, int vtnum) { rgba = rgba_; vertexnum = vtnum; bC = true; };
 	void setFacePointer(unsigned int* faces_, int fcnum) { faces = faces_;facenum = fcnum; };
 	float* getNormPointer(){return norm;};
 	float* getReflectancePointer(){return reflectance;};
-	void setReflectancePointer(float* reflectance_,int vtnum){reflectance=reflectance_;vertexnum=vtnum;};
+	void setReflectancePointer(float* reflectance_, int vtnum) { reflectance = reflectance_; vertexnum = vtnum; bG = true; };
 	unsigned int* getFaces(){return faces;};
 	unsigned char* getRgbaPointer(){return rgba;};
 	Vector3d getCentroid(){return g;};
