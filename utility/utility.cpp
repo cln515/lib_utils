@@ -150,6 +150,15 @@ _6dof m2_6dof(Matrix4d& m){
 
 };
 
+void _6dof2trans_quaternion(_6dof dof,Eigen::Vector3d& trans,Eigen::Vector4d& quaternion) {
+	trans << dof.x, dof.y, dof.z;
+	double s1 = sin(dof.rx), s2 = sin(dof.ry), s3 = sin(dof.rz), c1 = cos(dof.rx), c2 = cos(dof.ry), c3 = cos(dof.rz);
+	quaternion << s1 * s2*c3 + c1 * c2*s3,
+		s1*c2*c3+c1*s2*s3,
+		c1*s2*c3-s1*c2*s3,
+		c1*c2*c3-s1*s2*s3;
+
+}
 
 void int2rgba(int color,unsigned char& r,unsigned char& g,unsigned char& b,unsigned char& a){
 		r=(color&0x0000ff);
