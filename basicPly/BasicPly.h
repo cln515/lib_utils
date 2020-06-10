@@ -74,6 +74,9 @@ public:
 	bool readPlyFileRGB(vector<string> fileName,int dataNum);
 	bool readPlyFile_(string fileName);
 
+	bool isReflectance() { return bG; }
+	bool isColor() { return bC; }
+
 	void panoramaTexture(unsigned char* rgbArray,int width,int height,Matrix4d& transMat);
 
 	int getVertexNumber(){return vertexnum;};
