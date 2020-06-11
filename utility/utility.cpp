@@ -108,6 +108,23 @@ Matrix3d axisRot2R(double rx,double ry,double rz){
 			return retMat;
 }
 
+Matrix3f faxisRot2R(double rx, double ry, double rz) {
+	Matrix4f R, rotx, roty, rotz;
+	float sinv, cosv;
+	sinv = sin(rx), cosv = cos(rx);
+
+
+
+	rotx << 1, 0, 0, 0, 0, cosv, -sinv, 0, 0, sinv, cosv, 0, 0, 0, 0, 1;
+	sinv = sin(ry); cosv = cos(ry);
+	roty << cosv, 0, sinv, 0, 0, 1, 0, 0, -sinv, 0, cosv, 0, 0, 0, 0, 1;
+	sinv = sin(rz); cosv = cos(rz);
+	rotz << cosv, -sinv, 0, 0, sinv, cosv, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+	R = rotx * roty*rotz;
+	Matrix3f retMat = R.block(0, 0, 3, 3);
+	return retMat;
+}
+
 Matrix3d ladybug_rot2xyz (double rph[3])
 {
     double sr, sp, sh, cr, cp, ch;
@@ -718,4 +735,35 @@ Matrix4d lookat2matrix(double* lookatParam) {
 	ret.block(0, 3, 3, 1) = pos;
 
 	return ret;
+}
+
+Matrix4f flookat2matrix(double* lookatParam) {
+	Vector3f pos, lookat, upper;
+	pos << lookatParam[0], lookatParam[1], lookatParam[2];
+	lookat << lookatParam[3], lookatParam[4], lookatParam[5];
+	upper << lookatParam[6], lookatParam[7], lookatParam[8];
+
+	lookat = (lookat - pos).normalized();
+	Vector3f r1, r2, r3;
+	r3 = lookat;
+	r2 = -upper;
+	r1 = r2.cross(r3);
+	Matrix4f ret = Matrix4f::Identity();
+	ret.block(0, 0, 3, 1) = r1;
+	ret.block(0, 1, 3, 1) = r2;
+	ret.block(0, 2, 3, 1) = r3;
+	ret.block(0, 3, 3, 1) = pos;
+
+	return ret;
+}
+
+
+Matrix4f perspective2matrix(double fovy, double aspect, double znear, double zfar) {
+	Matrix4f m1_;
+	m1_ <<
+		1.0 / tan(aspect * fovy / 2), 0, 0, 0,
+		0, 1.0/tan(fovy/2), 0, 0,
+		0, 0, (zfar + znear) / (zfar - znear), -2 * zfar*znear / (zfar - znear),
+		0, 0, 1, 0;
+	return m1_;
 }

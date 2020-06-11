@@ -103,6 +103,7 @@ struct matching{
 Vector4d dcm2q(Matrix3d& dcm);
 Matrix3d q2dcm(Vector4d& q);
 Matrix3d axisRot2R(double rx,double ry,double rz);
+Matrix3f faxisRot2R(double rx, double ry, double rz);
 Matrix3d ladybug_rot2xyz (double rph[3]);
 void R2axisRot(Matrix3d R,double& rx,double& ry,double& rz);
 
@@ -155,6 +156,8 @@ void FisheyeTrans(double x, double y, double z, double& u, double& v,
 	double ox, double oy, double f, double k1, double k2=0, double k3=0, double b1=0);
 
 Matrix4d lookat2matrix(double* lookatParam);
+Matrix4f flookat2matrix(double* lookatParam);
+Matrix4f perspective2matrix(double fovy,double aspect,double znear,double zfar);
 
 #endif
 
