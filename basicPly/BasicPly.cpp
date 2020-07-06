@@ -931,9 +931,9 @@ void BasicPly::convertFAROColoredPtx2SpherePly(string inFileName) {
 		double rad = f[0] * f[0]+ f[1] * f[1]+ f[2] * f[2];
 		rad = sqrt(rad);
 		if (rad > 0) {
-			f[0] = f[0] / rad;
-			f[1] = f[1] / rad;
-			f[2] = f[2] / rad;
+			f[0] = f[0]; // rad;
+			f[1] = f[1]; // rad;
+			f[2] = f[2]; // rad;
 		}
 
 		arrayPoint[vertCnt].x = f[0];
