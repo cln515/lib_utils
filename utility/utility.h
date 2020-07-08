@@ -3,8 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <Eigen\Eigen>
-#include <Eigen\Core>
+#include <Eigen/Eigen>
+#include <Eigen/Core>
 #include <time.h> 
 
 #if defined(WIN32) || defined(WIN64)
