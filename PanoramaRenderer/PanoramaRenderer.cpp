@@ -1644,7 +1644,7 @@ void InitPers(int viewWidth, int viewHeight,double znear ,double depthResolution
 	glViewport(0, 0, viewWidth, viewHeight);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClearColor(1.0, 1.0, 0.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 
 	GLfloat m[16];
@@ -1786,6 +1786,9 @@ PFD_GENERIC_ACCELERATED,
     std::cout << "initialising context...";
     this->openGLContext = glXCreateContextAttribsARB(display_, fbConfigs[0], 0, True, context_attribs);
 
+
+	viewWidth_ = viewWidth_stat = view_w;
+	viewHeight_ = viewHeight_stat = view_h;
     int pBufferAttribs[] = {
         GLX_PBUFFER_WIDTH, view_w,
         GLX_PBUFFER_HEIGHT, view_h,
@@ -1795,6 +1798,12 @@ PFD_GENERIC_ACCELERATED,
     this->pbuffer = glXCreatePbuffer(display_, fbConfigs[0], pBufferAttribs);
     XFree(fbConfigs);
     XSync(display_, False);
+
+	if(!glXMakeContextCurrent(display_, pbuffer, pbuffer, openGLContext)){
+		std::cout << "error with content creation\n";
+	}else{
+		std::cout << "made a context the current context\n";
+	}
 	#endif
 }
 
