@@ -16,7 +16,7 @@ using namespace Eigen;
 #ifndef BASICPLY
 #define BASICPLY
 
-
+typedef map<int, int> IDXMAP;
 
 class BasicPly{
 private:
@@ -99,6 +99,8 @@ public:
 	unsigned char* getRgbaPointer(){return rgba;};
 	Vector3d getCentroid(){return g;};
 	void computeNorm();
+	void removeNoMeshPoints();
+	void removeZeroPoints();
 	void transform(Matrix4d m);
 
 	void writePlyFile(string fileName);

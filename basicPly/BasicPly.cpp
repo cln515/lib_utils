@@ -1528,3 +1528,78 @@ void BasicPly::writePlyFileAuto(string fileName) {
 	}
 	ofs.close();
 }
+
+
+void BasicPly::removeNoMeshPoints() {
+	bool* exists = (bool*)malloc(sizeof(bool)*vertexnum);
+	memset(exists, 0, sizeof(bool)*vertexnum);
+	for (int i = 0; i < facenum; i++) {
+		exists[faces[i * 3]] = true;
+		exists[faces[i * 3 + 1]] = true;
+		exists[faces[i * 3 + 2]] = true;
+	}
+	vector<int> inlier;
+	for (int i = 0; i < vertexnum; i++) {
+		if (exists[i])inlier.push_back(i);
+	}
+	float* newv = (float*)malloc(sizeof(float)*inlier.size() * 3);
+	float* newRef = (float*)malloc(sizeof(float)*inlier.size());
+	int cnt = 0;
+	IDXMAP idxConv;
+	for (auto in_idx : inlier) {
+		newv[cnt * 3] = verteces[in_idx * 3];
+		newv[cnt * 3 + 1] = verteces[in_idx * 3 + 1];
+		newv[cnt * 3 + 2] = verteces[in_idx * 3 + 2];
+		newRef[cnt] = reflectance[in_idx];
+		idxConv.insert(IDXMAP::value_type::pair(in_idx, cnt));
+		cnt++;
+	}
+	for (int i = 0; i < facenum; i++) {
+		faces[i * 3] = idxConv.at(faces[i * 3]);
+		faces[i * 3 + 1] = idxConv.at(faces[i * 3 + 1]);
+		faces[i * 3 + 2] = idxConv.at(faces[i * 3 + 2]);
+	}
+
+
+
+	float* temp = verteces;
+	verteces = newv;
+	reflectance = newRef;
+	//free(temp);
+
+	vertexnum = inlier.size();
+
+}
+
+void BasicPly::removeZeroPoints() {
+	bool* exists = (bool*)malloc(sizeof(bool)*vertexnum);
+	memset(exists, 0, sizeof(bool)*vertexnum);
+	vector<int> inlier;
+	for (int i = 0; i < vertexnum; i++) {
+		if (verteces[i * 3] != 0 || verteces[i * 3 + 1] != 0 || verteces[i * 3 + 2] != 0)inlier.push_back(i);
+	}
+	float* newv = (float*)malloc(sizeof(float)*inlier.size() * 3);
+	float* newRef = (float*)malloc(sizeof(float)*inlier.size());
+	int cnt = 0;
+	IDXMAP idxConv;
+	for (auto in_idx : inlier) {
+		newv[cnt * 3] = verteces[in_idx * 3];
+		newv[cnt * 3 + 1] = verteces[in_idx * 3 + 1];
+		newv[cnt * 3 + 2] = verteces[in_idx * 3 + 2];
+		newRef[cnt] = reflectance[in_idx];
+		idxConv.insert(IDXMAP::value_type::pair(in_idx, cnt));
+		cnt++;
+	}
+	for (int i = 0; i < facenum; i++) {
+		faces[i * 3] = idxConv.at(faces[i * 3]);
+		faces[i * 3 + 1] = idxConv.at(faces[i * 3 + 1]);
+		faces[i * 3 + 2] = idxConv.at(faces[i * 3 + 2]);
+	}
+
+	float* temp = verteces;
+	verteces = newv;
+	reflectance = newRef;
+	//free(temp);
+	vertexnum = inlier.size();
+
+}
