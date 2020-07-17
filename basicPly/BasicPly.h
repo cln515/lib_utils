@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include "..\utility\utility.h"
+#include "../utility/utility.h"
 #include <vector>
 
 #include "Eigen/Core"
@@ -16,7 +16,7 @@ using namespace Eigen;
 #ifndef BASICPLY
 #define BASICPLY
 
-
+typedef map<int, int> IDXMAP;
 
 class BasicPly{
 private:
@@ -36,8 +36,14 @@ protected:
 	float* reflectance;
 	unsigned int* faces;
 	unsigned char* rgba;//{r,g,b,a,r,g,b,a,...}
+#if defined(WIN32) || defined(WIN64)
 	__int64 facenum;
 	__int64 vertexnum;
+#elif defined(__unix__)
+	long facenum;
+	long vertexnum;
+#endif
+	
 	double alpha;
 	bool isANN;
 	bool bRead;
@@ -93,6 +99,8 @@ public:
 	unsigned char* getRgbaPointer(){return rgba;};
 	Vector3d getCentroid(){return g;};
 	void computeNorm();
+	void removeNoMeshPoints();
+	void removeZeroPoints();
 	void transform(Matrix4d m);
 
 	void writePlyFile(string fileName);

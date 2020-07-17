@@ -3,26 +3,31 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #define PI_VAL M_PI
+#include<fstream>
+#include <iostream>
+#include"Eigen/Eigen"
+#include"Eigen/Core"
+#include<GL/gl.h>
+#include<GL/glu.h>
 #if defined(WIN32) || defined(WIN64)
 // Windows 32-bit and 64-bit
 #include <Windows.h>
+
 #elif defined(MAC_OSX)
 // Mac OSX
 
 #else
 // Linux and all others
 // Using GCC 4 where hiding attributes is possible
+#include<GL/glx.h>
 
 
 #endif
 //#include<gl/glew.h>
-#include<fstream>
-#include <iostream>
-#include"Eigen/Eigen"
-#include"Eigen/Core"
 
-#include<gl\GL.h>
-#include<gl\GLU.h>
+
+
+
 
 using namespace Eigen;
 using namespace std;
@@ -126,9 +131,15 @@ public:
 	bool isPers() { return type==PERSPECTIVE; };
 	render_type getType() { return type; }
 private:
+#if defined(WIN32) || defined(WIN64)
 	HDC		_hdc_;
 	HBITMAP m_hbitmap;
 	HGLRC	_hrc;
+#elif defined(__unix__)
+	Display *display_;
+	GLXPbuffer pbuffer;
+	GLXContext openGLContext;
+#endif
 };
 
 #endif

@@ -4,8 +4,14 @@
 using namespace std;
 using namespace Eigen;
 
-
+#if defined(WIN32) || defined(WIN64)
 HDC dhdc;
+#elif defined(__unix__)
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
+static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
+static glXMakeContextCurrentARBProc   glXMakeContextCurrentARB   = NULL;
+#endif
 
 void display(float*& vertex, unsigned int*& face, float*& reflectance, int meshNum, int vertNum);
 void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int meshNum, int vertNum);
@@ -75,334 +81,265 @@ void PanoramaRenderer::setDataRGB(float* vertex, unsigned int* face, unsigned ch
 	};
 }
 
-void PanoramaRenderer::render_dot(Vector3d& center, Matrix3d& viewDirection, int viewSize) {
-	PIXELFORMATDESCRIPTOR _pfd = {
- sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
- 1,	//	Versin of this structure
- PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
- PFD_GENERIC_ACCELERATED | PFD_DOUBLEBUFFER,
-		//		PFD_GENERIC_FORMAT,
-				//	Pixel buffer flags
-				PFD_TYPE_RGBA,	//	Type of pixel data
-				24,	//	The number of color bitplanes
-				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
-				0, 0,	//	Number of alpha bitplanes and shift count
-				0, 0, 0, 0, 0,	//	Number of accumulation bits
-				32,	//	Z depth
-				0,	//	Stencil depth
-				0,	//	Number of auxiliary buffers
-				PFD_MAIN_PLANE,	//	Ignored
-				0,	//	Reserved
-				0,	//	Ignored
-				0,	//	Transparent color value
-				0,	//	Ignored
-	};
-	GLint view[4];
-	HDC		_hdc_ = CreateCompatibleDC(NULL);
-	viewHeight = viewSize;
-	DWORD m_DIBWidth = viewSize * 2;
-	DWORD m_DIBHeight = viewSize;
-	DWORD m_BPP = 24;
+// void PanoramaRenderer::render_dot(Vector3d& center, Matrix3d& viewDirection, int viewSize) {
+// 	PIXELFORMATDESCRIPTOR _pfd = {
+//  sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
+//  1,	//	Versin of this structure
+//  PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
+//  PFD_GENERIC_ACCELERATED | PFD_DOUBLEBUFFER,
+// 		//		PFD_GENERIC_FORMAT,
+// 				//	Pixel buffer flags
+// 				PFD_TYPE_RGBA,	//	Type of pixel data
+// 				24,	//	The number of color bitplanes
+// 				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
+// 				0, 0,	//	Number of alpha bitplanes and shift count
+// 				0, 0, 0, 0, 0,	//	Number of accumulation bits
+// 				32,	//	Z depth
+// 				0,	//	Stencil depth
+// 				0,	//	Number of auxiliary buffers
+// 				PFD_MAIN_PLANE,	//	Ignored
+// 				0,	//	Reserved
+// 				0,	//	Ignored
+// 				0,	//	Transparent color value
+// 				0,	//	Ignored
+// 	};
+// 	GLint view[4];
+// 	HDC		_hdc_ = CreateCompatibleDC(NULL);
+// 	viewHeight = viewSize;
+// 	DWORD m_DIBWidth = viewSize * 2;
+// 	DWORD m_DIBHeight = viewSize;
+// 	DWORD m_BPP = 24;
 
-	// Create BITMAPINFOHEADER
-	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
-	int iSize = sizeof(BITMAPINFOHEADER);
-	::memset(m_PBIH, 0, iSize);
+// 	// Create BITMAPINFOHEADER
+// 	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
+// 	int iSize = sizeof(BITMAPINFOHEADER);
+// 	::memset(m_PBIH, 0, iSize);
 
-	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
-	m_PBIH->biWidth = m_DIBWidth;
-	m_PBIH->biHeight = m_DIBHeight;
-	m_PBIH->biPlanes = 1;
-	m_PBIH->biBitCount = m_BPP;
-	m_PBIH->biCompression = BI_RGB;
+// 	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
+// 	m_PBIH->biWidth = m_DIBWidth;
+// 	m_PBIH->biHeight = m_DIBHeight;
+// 	m_PBIH->biPlanes = 1;
+// 	m_PBIH->biBitCount = m_BPP;
+// 	m_PBIH->biCompression = BI_RGB;
 
-	// Create DIB
-	void* m_PBits;
-	HBITMAP m_hbitmap_old;
-	HBITMAP m_hbitmap = ::CreateDIBSection(
-		_hdc_,
-		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
-		&m_PBits, NULL, 0
-	);
+// 	// Create DIB
+// 	void* m_PBits;
+// 	HBITMAP m_hbitmap_old;
+// 	HBITMAP m_hbitmap = ::CreateDIBSection(
+// 		_hdc_,
+// 		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
+// 		&m_PBits, NULL, 0
+// 	);
 
-	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
-	DWORD dwLength;
-	if ((m_DIBWidth * 3) % 4 == 0) /* ÉoÉbÉtÉ@ÇÃÇPÉâÉCÉìÇÃí∑Ç≥ÇåvéZ */
-		dwLength = m_DIBWidth * 3;
-	else
-		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
-	//	LPBYTE lpPixel,lpBuf;
-	//	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
-	//	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
+// 	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
+// 	DWORD dwLength;
+// 	if ((m_DIBWidth * 3) % 4 == 0) /* ÔøΩoÔøΩbÔøΩtÔøΩ@ÔøΩÃÇPÔøΩÔøΩÔøΩCÔøΩÔøΩÔøΩÃíÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩvÔøΩZ */
+// 		dwLength = m_DIBWidth * 3;
+// 	else
+// 		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
+// 	//	LPBYTE lpPixel,lpBuf;
+// 	//	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
+// 	//	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
 
-	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
-	::SetPixelFormat(_hdc_, _pfid, &_pfd);
-	HGLRC	_hrc = ::wglCreateContext(_hdc_);
-	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewWidth_, viewHeight_, depthResolution);
-	glGetIntegerv(GL_VIEWPORT, view);
-	for (int i = 0; i < dataNum; i++) {
-		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
-		float* vertexp = vertexPointers[i];
-		for (int j = 0; j < vtNumArray[i]; j++) {
-			Vector3d tp;
-			Vector3d pp;
-			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+// 	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
+// 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
+// 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
+// 	::wglMakeCurrent(_hdc_, _hrc);
+// 	Init(viewWidth_, viewHeight_, depthResolution);
+// 	glGetIntegerv(GL_VIEWPORT, view);
+// 	for (int i = 0; i < dataNum; i++) {
+// 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+// 		float* vertexp = vertexPointers[i];
+// 		for (int j = 0; j < vtNumArray[i]; j++) {
+// 			Vector3d tp;
+// 			Vector3d pp;
+// 			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
 
-			sphericalTrans_renderer(tp, pp, center, viewDirection);
-			trsVert[j * 3] = (float)tp(0, 0);
-			trsVert[j * 3 + 1] = (float)tp(1, 0);
-			trsVert[j * 3 + 2] = (float)tp(2, 0);
-			//			cout<<tp<<endl;
-		}
-		display_points(trsVert, facePointers[i], reflectancePointers[i], meshNumArray[i], vtNumArray[i]);
-		free(trsVert);
-	}
+// 			sphericalTrans_renderer(tp, pp, center, viewDirection);
+// 			trsVert[j * 3] = (float)tp(0, 0);
+// 			trsVert[j * 3 + 1] = (float)tp(1, 0);
+// 			trsVert[j * 3 + 2] = (float)tp(2, 0);
+// 			//			cout<<tp<<endl;
+// 		}
+// 		display_points(trsVert, facePointers[i], reflectancePointers[i], meshNumArray[i], vtNumArray[i]);
+// 		free(trsVert);
+// 	}
 
-	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
-	//	SelectObject(dhdc,m_hbitmap_old);
-	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
-	reflectanceImage = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_RED, GL_FLOAT, reflectanceImage);
-	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
-	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	for (int x = 0; x < viewHeight * 2; x++) {
-		for (int y = 0; y < viewHeight; y++) {
-			int idx = y * viewHeight * 2 + x;
-			if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0; continue; }
-			int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
-			int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
-			int preyidx = idx - viewHeight * 2;
-			int postyidx = idx + viewHeight * 2;
-			if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
-				normArray[idx] = 0;
-				continue;
-			}
-			double t = M_PI * (depthArray[postxidx] + depthArray[prexidx]) * 125 / viewHeight;//125= viewOrtho far/4
-			double d = (depthArray[postxidx] - depthArray[prexidx]) * 500;
-			double t2 = M_PI * (depthArray[postyidx] + depthArray[preyidx]) * 125 / viewHeight;//125= viewOrtho far/4
-			double d2 = (depthArray[postyidx] - depthArray[preyidx]) * 500;
-			normArray[idx] = (t / sqrt(t*t + d * d) + t2 / sqrt(t2*t2 + d2 * d2)) / 2;//max...2.0
-		}
-	}
+// 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
+// 	//	SelectObject(dhdc,m_hbitmap_old);
+// 	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
+// 	reflectanceImage = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_RED, GL_FLOAT, reflectanceImage);
+// 	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
+// 	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	for (int x = 0; x < viewHeight * 2; x++) {
+// 		for (int y = 0; y < viewHeight; y++) {
+// 			int idx = y * viewHeight * 2 + x;
+// 			if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0; continue; }
+// 			int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
+// 			int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
+// 			int preyidx = idx - viewHeight * 2;
+// 			int postyidx = idx + viewHeight * 2;
+// 			if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
+// 				normArray[idx] = 0;
+// 				continue;
+// 			}
+// 			double t = M_PI * (depthArray[postxidx] + depthArray[prexidx]) * 125 / viewHeight;//125= viewOrtho far/4
+// 			double d = (depthArray[postxidx] - depthArray[prexidx]) * 500;
+// 			double t2 = M_PI * (depthArray[postyidx] + depthArray[preyidx]) * 125 / viewHeight;//125= viewOrtho far/4
+// 			double d2 = (depthArray[postyidx] - depthArray[preyidx]) * 500;
+// 			normArray[idx] = (t / sqrt(t*t + d * d) + t2 / sqrt(t2*t2 + d2 * d2)) / 2;//max...2.0
+// 		}
+// 	}
 
-	//	GetObject(m_hbitmap,
-	::wglMakeCurrent(0, 0);
-	//	GlobalFree(lpBuf);
-	//	GlobalFree(lpBuf);
-	//	free(buffer);
-	// return 0;
-}
+// 	//	GetObject(m_hbitmap,
+// 	::wglMakeCurrent(0, 0);
+// 	//	GlobalFree(lpBuf);
+// 	//	GlobalFree(lpBuf);
+// 	//	free(buffer);
+// 	// return 0;
+// }
 
-void PanoramaRenderer::render(Vector3d& center, Matrix3d& viewDirection, int viewSize) {
-	PIXELFORMATDESCRIPTOR _pfd = {
- sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
- 1,	//	Versin of this structure
- PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
- PFD_GENERIC_ACCELERATED,
-		//		PFD_GENERIC_FORMAT,
-				//	Pixel buffer flags
-				PFD_TYPE_RGBA,	//	Type of pixel data
-				24,	//	The number of color bitplanes
-				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
-				0, 0,	//	Number of alpha bitplanes and shift count
-				0, 0, 0, 0, 0,	//	Number of accumulation bits
-				32,	//	Z depth
-				0,	//	Stencil depth
-				0,	//	Number of auxiliary buffers
-				PFD_MAIN_PLANE,	//	Ignored
-				0,	//	Reserved
-				0,	//	Ignored
-				0,	//	Transparent color value
-				0,	//	Ignored
-	};
-
-
+// void PanoramaRenderer::render(Vector3d& center, Matrix3d& viewDirection, int viewSize) {
+// 	PIXELFORMATDESCRIPTOR _pfd = {
+//  sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
+//  1,	//	Versin of this structure
+//  PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
+//  PFD_GENERIC_ACCELERATED,
+// 		//		PFD_GENERIC_FORMAT,
+// 				//	Pixel buffer flags
+// 				PFD_TYPE_RGBA,	//	Type of pixel data
+// 				24,	//	The number of color bitplanes
+// 				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
+// 				0, 0,	//	Number of alpha bitplanes and shift count
+// 				0, 0, 0, 0, 0,	//	Number of accumulation bits
+// 				32,	//	Z depth
+// 				0,	//	Stencil depth
+// 				0,	//	Number of auxiliary buffers
+// 				PFD_MAIN_PLANE,	//	Ignored
+// 				0,	//	Reserved
+// 				0,	//	Ignored
+// 				0,	//	Transparent color value
+// 				0,	//	Ignored
+// 	};
 
 
 
 
-	GLint view[4];
-	HDC		_hdc_ = CreateCompatibleDC(NULL);
-	viewHeight = viewSize;
-	DWORD m_DIBWidth = viewSize * 2;
-	DWORD m_DIBHeight = viewSize;
-	DWORD m_BPP = 24;
 
-	// Create BITMAPINFOHEADER
-	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
-	int iSize = sizeof(BITMAPINFOHEADER);
-	::memset(m_PBIH, 0, iSize);
 
-	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
-	m_PBIH->biWidth = m_DIBWidth;
-	m_PBIH->biHeight = m_DIBHeight;
-	m_PBIH->biPlanes = 1;
-	m_PBIH->biBitCount = m_BPP;
-	m_PBIH->biCompression = BI_RGB;
+// 	GLint view[4];
+// 	HDC		_hdc_ = CreateCompatibleDC(NULL);
+// 	viewHeight = viewSize;
+// 	DWORD m_DIBWidth = viewSize * 2;
+// 	DWORD m_DIBHeight = viewSize;
+// 	DWORD m_BPP = 24;
 
-	// Create DIB
-	void* m_PBits;
-	HBITMAP m_hbitmap_old;
-	HBITMAP m_hbitmap = ::CreateDIBSection(
-		_hdc_,
-		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
-		&m_PBits, NULL, 0
-	);
+// 	// Create BITMAPINFOHEADER
+// 	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
+// 	int iSize = sizeof(BITMAPINFOHEADER);
+// 	::memset(m_PBIH, 0, iSize);
 
-	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
-	DWORD dwLength;
-	if ((m_DIBWidth * 3) % 4 == 0) /* ÉoÉbÉtÉ@ÇÃÇPÉâÉCÉìÇÃí∑Ç≥ÇåvéZ */
-		dwLength = m_DIBWidth * 3;
-	else
-		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
-	//	LPBYTE lpPixel,lpBuf;
-	//	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
-	//	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
+// 	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
+// 	m_PBIH->biWidth = m_DIBWidth;
+// 	m_PBIH->biHeight = m_DIBHeight;
+// 	m_PBIH->biPlanes = 1;
+// 	m_PBIH->biBitCount = m_BPP;
+// 	m_PBIH->biCompression = BI_RGB;
 
-	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
-	::SetPixelFormat(_hdc_, _pfid, &_pfd);
-	HGLRC	_hrc = ::wglCreateContext(_hdc_);
-	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewWidth_,viewHeight_, depthResolution);
-	glGetIntegerv(GL_VIEWPORT, view);
-	for (int i = 0; i < dataNum; i++) {
-		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
-		float* vertexp = vertexPointers[i];
-		for (int j = 0; j < vtNumArray[i]; j++) {
-			Vector3d tp;
-			Vector3d pp;
-			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+// 	// Create DIB
+// 	void* m_PBits;
+// 	HBITMAP m_hbitmap_old;
+// 	HBITMAP m_hbitmap = ::CreateDIBSection(
+// 		_hdc_,
+// 		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
+// 		&m_PBits, NULL, 0
+// 	);
 
-			sphericalTrans_renderer(tp, pp, center, viewDirection);
-			trsVert[j * 3] = (float)tp(0, 0);
-			trsVert[j * 3 + 1] = (float)tp(1, 0);
-			trsVert[j * 3 + 2] = (float)tp(2, 0);
-			//			cout<<tp<<endl;
-		}
-		display(trsVert, facePointers[i], reflectancePointers[i], meshNumArray[i], vtNumArray[i]);
-		free(trsVert);
-	}
+// 	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
+// 	DWORD dwLength;
+// 	if ((m_DIBWidth * 3) % 4 == 0) /* ÔøΩoÔøΩbÔøΩtÔøΩ@ÔøΩÃÇPÔøΩÔøΩÔøΩCÔøΩÔøΩÔøΩÃíÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩvÔøΩZ */
+// 		dwLength = m_DIBWidth * 3;
+// 	else
+// 		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
+// 	//	LPBYTE lpPixel,lpBuf;
+// 	//	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
+// 	//	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
 
-	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
-	//	SelectObject(dhdc,m_hbitmap_old);
-	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
-	reflectanceImage = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_RED, GL_FLOAT, reflectanceImage);
-	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
-	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
+// 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
+// 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
+// 	::wglMakeCurrent(_hdc_, _hrc);
+// 	Init(viewWidth_,viewHeight_, depthResolution);
+// 	glGetIntegerv(GL_VIEWPORT, view);
+// 	for (int i = 0; i < dataNum; i++) {
+// 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+// 		float* vertexp = vertexPointers[i];
+// 		for (int j = 0; j < vtNumArray[i]; j++) {
+// 			Vector3d tp;
+// 			Vector3d pp;
+// 			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
 
-	double th = M_PI / viewHeight;
-	Vector3d zdrc;
+// 			sphericalTrans_renderer(tp, pp, center, viewDirection);
+// 			trsVert[j * 3] = (float)tp(0, 0);
+// 			trsVert[j * 3 + 1] = (float)tp(1, 0);
+// 			trsVert[j * 3 + 2] = (float)tp(2, 0);
+// 			//			cout<<tp<<endl;
+// 		}
+// 		display(trsVert, facePointers[i], reflectancePointers[i], meshNumArray[i], vtNumArray[i]);
+// 		free(trsVert);
+// 	}
 
-	for (int x = 0; x < viewHeight * 2; x++) {
-		for (int y = 0; y < viewHeight; y++) {
-			int idx = y * viewHeight * 2 + x;
-			if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0; continue; }
-			int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
-			int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
-			int preyidx = idx - viewHeight * 2;
-			int postyidx = idx + viewHeight * 2;
-			if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
-				normArray[idx] = 0;
-				continue;
-			}
+// 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
+// 	//	SelectObject(dhdc,m_hbitmap_old);
+// 	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
+// 	reflectanceImage = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_RED, GL_FLOAT, reflectanceImage);
+// 	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
+// 	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
 
-			/*double t=M_PI*(depthArray[postxidx]+depthArray[prexidx])*125/viewHeight;//125= viewOrtho far/4
+// 	double th = M_PI / viewHeight;
+// 	Vector3d zdrc;
 
-			double d=(depthArray[postxidx]-depthArray[prexidx])*500;
-			double t2=M_PI*(depthArray[postyidx]+depthArray[preyidx])*125/viewHeight;//125= viewOrtho far/4
-			double d2=(depthArray[postyidx]-depthArray[preyidx])*500;*/
-			Vector3d v1, v2;
-			v1 << (depthArray[prexidx] + depthArray[postxidx])*sin(th) * 500, 0, (depthArray[prexidx] - depthArray[postxidx])*cos(th) * 500;
-			v2 << 0, (depthArray[preyidx] + depthArray[postyidx])*sin(th) * 500, (depthArray[preyidx] - depthArray[postyidx])*cos(th) * 500;
-			Vector3d n;
-			n = v1.cross(v2);
-			if (n(2) < 0)n = -n;
-			n.normalize();
-			normArray[idx] = n(2);//max...2.0
-		}
-	}
-	//	GetObject(m_hbitmap,
-	::wglMakeCurrent(0, 0);
-	//	GlobalFree(lpBuf);
-	//	GlobalFree(lpBuf);
-	//	free(buffer);
-	// return 0;
-}
+// 	for (int x = 0; x < viewHeight * 2; x++) {
+// 		for (int y = 0; y < viewHeight; y++) {
+// 			int idx = y * viewHeight * 2 + x;
+// 			if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0; continue; }
+// 			int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
+// 			int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
+// 			int preyidx = idx - viewHeight * 2;
+// 			int postyidx = idx + viewHeight * 2;
+// 			if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
+// 				normArray[idx] = 0;
+// 				continue;
+// 			}
+
+// 			/*double t=M_PI*(depthArray[postxidx]+depthArray[prexidx])*125/viewHeight;//125= viewOrtho far/4
+
+// 			double d=(depthArray[postxidx]-depthArray[prexidx])*500;
+// 			double t2=M_PI*(depthArray[postyidx]+depthArray[preyidx])*125/viewHeight;//125= viewOrtho far/4
+// 			double d2=(depthArray[postyidx]-depthArray[preyidx])*500;*/
+// 			Vector3d v1, v2;
+// 			v1 << (depthArray[prexidx] + depthArray[postxidx])*sin(th) * 500, 0, (depthArray[prexidx] - depthArray[postxidx])*cos(th) * 500;
+// 			v2 << 0, (depthArray[preyidx] + depthArray[postyidx])*sin(th) * 500, (depthArray[preyidx] - depthArray[postyidx])*cos(th) * 500;
+// 			Vector3d n;
+// 			n = v1.cross(v2);
+// 			if (n(2) < 0)n = -n;
+// 			n.normalize();
+// 			normArray[idx] = n(2);//max...2.0
+// 		}
+// 	}
+// 	//	GetObject(m_hbitmap,
+// 	::wglMakeCurrent(0, 0);
+// 	//	GlobalFree(lpBuf);
+// 	//	GlobalFree(lpBuf);
+// 	//	free(buffer);
+// 	// return 0;
+// }
 
 void PanoramaRenderer::render(Matrix4d cameraParam) {
-	//PIXELFORMATDESCRIPTOR _pfd = {
- //sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
- //1,	//	Versin of this structure
- //PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
- //PFD_GENERIC_ACCELERATED,
-	//	//		PFD_GENERIC_FORMAT,
-	//			//	Pixel buffer flags
-	//			PFD_TYPE_RGBA,	//	Type of pixel data
-	//			24,	//	The number of color bitplanes
-	//			0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
-	//			0, 0,	//	Number of alpha bitplanes and shift count
-	//			0, 0, 0, 0, 0,	//	Number of accumulation bits
-	//			32,	//	Z depth
-	//			0,	//	Stencil depth
-	//			0,	//	Number of auxiliary buffers
-	//			PFD_MAIN_PLANE,	//	Ignored
-	//			0,	//	Reserved
-	//			0,	//	Ignored
-	//			0,	//	Transparent color value
-	//			0,	//	Ignored
-	//};
-
-
-
-
-
-
-
-	//HDC		_hdc_ = CreateCompatibleDC(NULL);
-	//viewHeight = viewSize;
-	//DWORD m_DIBWidth = viewSize * 2;
-	//DWORD m_DIBHeight = viewSize;
-	//DWORD m_BPP = 24;
-
-	//// Create BITMAPINFOHEADER
-	//BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
-	//int iSize = sizeof(BITMAPINFOHEADER);
-	//::memset(m_PBIH, 0, iSize);
-
-	//m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
-	//m_PBIH->biWidth = m_DIBWidth;
-	//m_PBIH->biHeight = m_DIBHeight;
-	//m_PBIH->biPlanes = 1;
-	//m_PBIH->biBitCount = m_BPP;
-	//m_PBIH->biCompression = BI_RGB;
-
-	//// Create DIB
-	//void* m_PBits;
-	//HBITMAP m_hbitmap_old;
-	//HBITMAP m_hbitmap = ::CreateDIBSection(
-	//	_hdc_,
-	//	(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
-	//	&m_PBits, NULL, 0
-	//);
-
-	//m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
-	//DWORD dwLength;
-	//if ((m_DIBWidth * 3) % 4 == 0) /* ÉoÉbÉtÉ@ÇÃÇPÉâÉCÉìÇÃí∑Ç≥ÇåvéZ */
-	//	dwLength = m_DIBWidth * 3;
-	//else
-	//	dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
-	////	LPBYTE lpPixel,lpBuf;
-	////	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
-	////	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
-
-	//int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
-	//::SetPixelFormat(_hdc_, _pfid, &_pfd);
-	//HGLRC	_hrc = ::wglCreateContext(_hdc_);
-	//::wglMakeCurrent(_hdc_, _hrc);
 	GLint view[4];
 
 	if (type==PERSPECTIVE) {
@@ -670,405 +607,405 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 }
 
 
-void PanoramaRenderer::render_dot(Matrix4d& cameraParameter, int viewSize) {
-	PIXELFORMATDESCRIPTOR _pfd = {
- sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
- 1,	//	Versin of this structure
- PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
- PFD_GENERIC_ACCELERATED | PFD_DOUBLEBUFFER,
-		//		PFD_GENERIC_FORMAT,
-				//	Pixel buffer flags
-				PFD_TYPE_RGBA,	//	Type of pixel data
-				24,	//	The number of color bitplanes
-				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
-				0, 0,	//	Number of alpha bitplanes and shift count
-				0, 0, 0, 0, 0,	//	Number of accumulation bits
-				32,	//	Z depth
-				0,	//	Stencil depth
-				0,	//	Number of auxiliary buffers
-				PFD_MAIN_PLANE,	//	Ignored
-				0,	//	Reserved
-				0,	//	Ignored
-				0,	//	Transparent color value
-				0,	//	Ignored
-	};
-	GLint view[4];
-	HDC		_hdc_ = CreateCompatibleDC(NULL);
-	viewHeight = viewSize;
-	DWORD m_DIBWidth = viewSize * 2;
-	DWORD m_DIBHeight = viewSize;
-	DWORD m_BPP = 24;
+// void PanoramaRenderer::render_dot(Matrix4d& cameraParameter, int viewSize) {
+// 	PIXELFORMATDESCRIPTOR _pfd = {
+//  sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
+//  1,	//	Versin of this structure
+//  PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
+//  PFD_GENERIC_ACCELERATED | PFD_DOUBLEBUFFER,
+// 		//		PFD_GENERIC_FORMAT,
+// 				//	Pixel buffer flags
+// 				PFD_TYPE_RGBA,	//	Type of pixel data
+// 				24,	//	The number of color bitplanes
+// 				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
+// 				0, 0,	//	Number of alpha bitplanes and shift count
+// 				0, 0, 0, 0, 0,	//	Number of accumulation bits
+// 				32,	//	Z depth
+// 				0,	//	Stencil depth
+// 				0,	//	Number of auxiliary buffers
+// 				PFD_MAIN_PLANE,	//	Ignored
+// 				0,	//	Reserved
+// 				0,	//	Ignored
+// 				0,	//	Transparent color value
+// 				0,	//	Ignored
+// 	};
+// 	GLint view[4];
+// 	HDC		_hdc_ = CreateCompatibleDC(NULL);
+// 	viewHeight = viewSize;
+// 	DWORD m_DIBWidth = viewSize * 2;
+// 	DWORD m_DIBHeight = viewSize;
+// 	DWORD m_BPP = 24;
 
-	// Create BITMAPINFOHEADER
-	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
-	int iSize = sizeof(BITMAPINFOHEADER);
-	::memset(m_PBIH, 0, iSize);
+// 	// Create BITMAPINFOHEADER
+// 	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
+// 	int iSize = sizeof(BITMAPINFOHEADER);
+// 	::memset(m_PBIH, 0, iSize);
 
-	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
-	m_PBIH->biWidth = m_DIBWidth;
-	m_PBIH->biHeight = m_DIBHeight;
-	m_PBIH->biPlanes = 1;
-	m_PBIH->biBitCount = m_BPP;
-	m_PBIH->biCompression = BI_RGB;
+// 	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
+// 	m_PBIH->biWidth = m_DIBWidth;
+// 	m_PBIH->biHeight = m_DIBHeight;
+// 	m_PBIH->biPlanes = 1;
+// 	m_PBIH->biBitCount = m_BPP;
+// 	m_PBIH->biCompression = BI_RGB;
 
-	// Create DIB
-	void* m_PBits;
-	HBITMAP m_hbitmap_old;
-	HBITMAP m_hbitmap = ::CreateDIBSection(
-		_hdc_,
-		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
-		&m_PBits, NULL, 0
-	);
+// 	// Create DIB
+// 	void* m_PBits;
+// 	HBITMAP m_hbitmap_old;
+// 	HBITMAP m_hbitmap = ::CreateDIBSection(
+// 		_hdc_,
+// 		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
+// 		&m_PBits, NULL, 0
+// 	);
 
-	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
-	DWORD dwLength;
-	if ((m_DIBWidth * 3) % 4 == 0) /* ÉoÉbÉtÉ@ÇÃÇPÉâÉCÉìÇÃí∑Ç≥ÇåvéZ */
-		dwLength = m_DIBWidth * 3;
-	else
-		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
-	//	LPBYTE lpPixel,lpBuf;
-	//	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
-	//	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
+// 	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
+// 	DWORD dwLength;
+// 	if ((m_DIBWidth * 3) % 4 == 0) /* ÔøΩoÔøΩbÔøΩtÔøΩ@ÔøΩÃÇPÔøΩÔøΩÔøΩCÔøΩÔøΩÔøΩÃíÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩvÔøΩZ */
+// 		dwLength = m_DIBWidth * 3;
+// 	else
+// 		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
+// 	//	LPBYTE lpPixel,lpBuf;
+// 	//	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
+// 	//	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
 
-	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
-	::SetPixelFormat(_hdc_, _pfid, &_pfd);
-	HGLRC	_hrc = ::wglCreateContext(_hdc_);
-	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewWidth_, viewHeight_, depthResolution);
-	glGetIntegerv(GL_VIEWPORT, view);
-	for (int i = 0; i < dataNum; i++) {
-		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
-		float* vertexp = vertexPointers[i];
-		for (int j = 0; j < vtNumArray[i]; j++) {
-			Vector3d tp;
-			Vector3d pp;
-			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+// 	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
+// 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
+// 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
+// 	::wglMakeCurrent(_hdc_, _hrc);
+// 	Init(viewWidth_, viewHeight_, depthResolution);
+// 	glGetIntegerv(GL_VIEWPORT, view);
+// 	for (int i = 0; i < dataNum; i++) {
+// 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+// 		float* vertexp = vertexPointers[i];
+// 		for (int j = 0; j < vtNumArray[i]; j++) {
+// 			Vector3d tp;
+// 			Vector3d pp;
+// 			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
 
-			//sphericalTrans_renderer(tp, pp, center, viewDirection);
-			sphericalTrans_renderer(tp, pp, cameraParameter);
-			trsVert[j * 3] = (float)tp(0, 0);
-			trsVert[j * 3 + 1] = (float)tp(1, 0);
-			trsVert[j * 3 + 2] = (float)tp(2, 0);
-			//			cout<<tp<<endl;
-		}
-		display_points(trsVert, facePointers[i], reflectancePointers[i], meshNumArray[i], vtNumArray[i]);
-		free(trsVert);
-	}
+// 			//sphericalTrans_renderer(tp, pp, center, viewDirection);
+// 			sphericalTrans_renderer(tp, pp, cameraParameter);
+// 			trsVert[j * 3] = (float)tp(0, 0);
+// 			trsVert[j * 3 + 1] = (float)tp(1, 0);
+// 			trsVert[j * 3 + 2] = (float)tp(2, 0);
+// 			//			cout<<tp<<endl;
+// 		}
+// 		display_points(trsVert, facePointers[i], reflectancePointers[i], meshNumArray[i], vtNumArray[i]);
+// 		free(trsVert);
+// 	}
 
-	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
-	//	SelectObject(dhdc,m_hbitmap_old);
-	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
-	reflectanceImage = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_RED, GL_FLOAT, reflectanceImage);
-	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
-	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	//for (int x = 0;x < viewHeight * 2;x++) {
-	//	for (int y = 0;y < viewHeight;y++) {
-	//		int idx = y * viewHeight * 2 + x;
-	//		if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0;continue; }
-	//		int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
-	//		int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
-	//		int preyidx = idx - viewHeight * 2;
-	//		int postyidx = idx + viewHeight * 2;
-	//		if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
-	//			normArray[idx] = 0;
-	//			continue;
-	//		}
-	//		double t = M_PI * (depthArray[postxidx] + depthArray[prexidx]) * 125 / viewHeight;//125= viewOrtho far/4
-	//		double d = (depthArray[postxidx] - depthArray[prexidx]) * 500;
-	//		double t2 = M_PI * (depthArray[postyidx] + depthArray[preyidx]) * 125 / viewHeight;//125= viewOrtho far/4
-	//		double d2 = (depthArray[postyidx] - depthArray[preyidx]) * 500;
-	//		normArray[idx] = (t / sqrt(t*t + d * d) + t2 / sqrt(t2*t2 + d2 * d2)) / 2;//max...2.0
-	//	}
-	//}
+// 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
+// 	//	SelectObject(dhdc,m_hbitmap_old);
+// 	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
+// 	reflectanceImage = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_RED, GL_FLOAT, reflectanceImage);
+// 	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
+// 	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	//for (int x = 0;x < viewHeight * 2;x++) {
+// 	//	for (int y = 0;y < viewHeight;y++) {
+// 	//		int idx = y * viewHeight * 2 + x;
+// 	//		if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0;continue; }
+// 	//		int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
+// 	//		int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
+// 	//		int preyidx = idx - viewHeight * 2;
+// 	//		int postyidx = idx + viewHeight * 2;
+// 	//		if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
+// 	//			normArray[idx] = 0;
+// 	//			continue;
+// 	//		}
+// 	//		double t = M_PI * (depthArray[postxidx] + depthArray[prexidx]) * 125 / viewHeight;//125= viewOrtho far/4
+// 	//		double d = (depthArray[postxidx] - depthArray[prexidx]) * 500;
+// 	//		double t2 = M_PI * (depthArray[postyidx] + depthArray[preyidx]) * 125 / viewHeight;//125= viewOrtho far/4
+// 	//		double d2 = (depthArray[postyidx] - depthArray[preyidx]) * 500;
+// 	//		normArray[idx] = (t / sqrt(t*t + d * d) + t2 / sqrt(t2*t2 + d2 * d2)) / 2;//max...2.0
+// 	//	}
+// 	//}
 
-	//	GetObject(m_hbitmap,
-	::wglMakeCurrent(0, 0);
-	//	GlobalFree(lpBuf);
-	//	GlobalFree(lpBuf);
-	//	free(buffer);
-	// return 0;
-}
-
-
-
-
-void PanoramaRenderer::renderColor(Vector3d& center, Matrix3d& viewDirection, int viewSize) {
-	PIXELFORMATDESCRIPTOR _pfd = {
- sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
- 1,	//	Versin of this structure
- PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
- PFD_GENERIC_ACCELERATED,
-		//		PFD_GENERIC_FORMAT,
-				//	Pixel buffer flags
-				PFD_TYPE_RGBA,	//	Type of pixel data
-				24,	//	The number of color bitplanes
-				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
-				0, 0,	//	Number of alpha bitplanes and shift count
-				0, 0, 0, 0, 0,	//	Number of accumulation bits
-				32,	//	Z depth
-				0,	//	Stencil depth
-				0,	//	Number of auxiliary buffers
-				PFD_MAIN_PLANE,	//	Ignored
-				0,	//	Reserved
-				0,	//	Ignored
-				0,	//	Transparent color value
-				0,	//	Ignored
-	};
-	GLint view[4];
-	HDC		_hdc_ = CreateCompatibleDC(NULL);
-	viewHeight = viewSize;
-	DWORD m_DIBWidth = viewSize * 2;
-	DWORD m_DIBHeight = viewSize;
-	DWORD m_BPP = 24;
-
-	// Create BITMAPINFOHEADER
-	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
-	int iSize = sizeof(BITMAPINFOHEADER);
-	::memset(m_PBIH, 0, iSize);
-
-	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
-	m_PBIH->biWidth = m_DIBWidth;
-	m_PBIH->biHeight = m_DIBHeight;
-	m_PBIH->biPlanes = 1;
-	m_PBIH->biBitCount = m_BPP;
-	m_PBIH->biCompression = BI_RGB;
-
-	// Create DIB
-	void* m_PBits;
-	HBITMAP m_hbitmap_old;
-	HBITMAP m_hbitmap = ::CreateDIBSection(
-		_hdc_,
-		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
-		&m_PBits, NULL, 0
-	);
-
-	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
-	DWORD dwLength;
-	if ((m_DIBWidth * 3) % 4 == 0) /* ÉoÉbÉtÉ@ÇÃÇPÉâÉCÉìÇÃí∑Ç≥ÇåvéZ */
-		dwLength = m_DIBWidth * 3;
-	else
-		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
-	//	LPBYTE lpPixel,lpBuf;
-	//	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
-	//	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
-
-	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
-	::SetPixelFormat(_hdc_, _pfid, &_pfd);
-	HGLRC	_hrc = ::wglCreateContext(_hdc_);
-	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewWidth_, viewHeight_, depthResolution);
-	glGetIntegerv(GL_VIEWPORT, view);
-	for (int i = 0; i < dataNum; i++) {
-		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
-		float* vertexp = vertexPointers[i];
-		for (int j = 0; j < vtNumArray[i]; j++) {
-			Vector3d tp;
-			Vector3d pp;
-			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
-
-			sphericalTrans_renderer(tp, pp, center, viewDirection);
-			trsVert[j * 3] = (float)tp(0, 0);
-			trsVert[j * 3 + 1] = (float)tp(1, 0);
-			trsVert[j * 3 + 2] = (float)tp(2, 0);
-			//			cout<<tp<<endl;
-		}
-		displayrgb(trsVert, facePointers[i], rgbaPointers[i], meshNumArray[i], vtNumArray[i]);
-		free(trsVert);
-	}
-
-	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
-	//	SelectObject(dhdc,m_hbitmap_old);
-	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
-	colorImage = (GLubyte*)malloc(sizeof(GLubyte)*view[2] * view[3] * 3);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_RGB, GL_UNSIGNED_BYTE, colorImage);
-	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
-	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-
-	double th = M_PI / viewHeight;
-	Vector3d zdrc;
-
-	for (int x = 0; x < viewHeight * 2; x++) {
-		for (int y = 0; y < viewHeight; y++) {
-			int idx = y * viewHeight * 2 + x;
-			if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0; continue; }
-			int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
-			int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
-			int preyidx = idx - viewHeight * 2;
-			int postyidx = idx + viewHeight * 2;
-			if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
-				normArray[idx] = 0;
-				continue;
-			}
-
-			/*double t=M_PI*(depthArray[postxidx]+depthArray[prexidx])*125/viewHeight;//125= viewOrtho far/4
-
-			double d=(depthArray[postxidx]-depthArray[prexidx])*500;
-			double t2=M_PI*(depthArray[postyidx]+depthArray[preyidx])*125/viewHeight;//125= viewOrtho far/4
-			double d2=(depthArray[postyidx]-depthArray[preyidx])*500;*/
-			Vector3d v1, v2;
-			v1 << (depthArray[prexidx] + depthArray[postxidx])*sin(th) * 500, 0, (depthArray[prexidx] - depthArray[postxidx])*cos(th) * 500;
-			v2 << 0, (depthArray[preyidx] + depthArray[postyidx])*sin(th) * 500, (depthArray[preyidx] - depthArray[postyidx])*cos(th) * 500;
-			Vector3d n;
-			n = v1.cross(v2);
-			if (n(2) < 0)n = -n;
-			n.normalize();
-			normArray[idx] = n(2);//max...2.0
-		}
-	}
-	//	GetObject(m_hbitmap,
-	::wglMakeCurrent(0, 0);
-	//	GlobalFree(lpBuf);
-	//	GlobalFree(lpBuf);
-	//	free(buffer);
-	// return 0;
-}
+// 	//	GetObject(m_hbitmap,
+// 	::wglMakeCurrent(0, 0);
+// 	//	GlobalFree(lpBuf);
+// 	//	GlobalFree(lpBuf);
+// 	//	free(buffer);
+// 	// return 0;
+// }
 
 
 
 
-void PanoramaRenderer::renderColor(Matrix4d& cameraParameter, int viewSize) {
-	PIXELFORMATDESCRIPTOR _pfd = {
- sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
- 1,	//	Versin of this structure
- PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
- PFD_GENERIC_ACCELERATED,
-		//		PFD_GENERIC_FORMAT,
-				//	Pixel buffer flags
-				PFD_TYPE_RGBA,	//	Type of pixel data
-				24,	//	The number of color bitplanes
-				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
-				0, 0,	//	Number of alpha bitplanes and shift count
-				0, 0, 0, 0, 0,	//	Number of accumulation bits
-				32,	//	Z depth
-				0,	//	Stencil depth
-				0,	//	Number of auxiliary buffers
-				PFD_MAIN_PLANE,	//	Ignored
-				0,	//	Reserved
-				0,	//	Ignored
-				0,	//	Transparent color value
-				0,	//	Ignored
-	};
-	GLint view[4];
-	HDC		_hdc_ = CreateCompatibleDC(NULL);
-	viewHeight = viewSize;
-	DWORD m_DIBWidth = viewSize * 2;
-	DWORD m_DIBHeight = viewSize;
-	DWORD m_BPP = 24;
+// void PanoramaRenderer::renderColor(Vector3d& center, Matrix3d& viewDirection, int viewSize) {
+// 	PIXELFORMATDESCRIPTOR _pfd = {
+//  sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
+//  1,	//	Versin of this structure
+//  PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
+//  PFD_GENERIC_ACCELERATED,
+// 		//		PFD_GENERIC_FORMAT,
+// 				//	Pixel buffer flags
+// 				PFD_TYPE_RGBA,	//	Type of pixel data
+// 				24,	//	The number of color bitplanes
+// 				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
+// 				0, 0,	//	Number of alpha bitplanes and shift count
+// 				0, 0, 0, 0, 0,	//	Number of accumulation bits
+// 				32,	//	Z depth
+// 				0,	//	Stencil depth
+// 				0,	//	Number of auxiliary buffers
+// 				PFD_MAIN_PLANE,	//	Ignored
+// 				0,	//	Reserved
+// 				0,	//	Ignored
+// 				0,	//	Transparent color value
+// 				0,	//	Ignored
+// 	};
+// 	GLint view[4];
+// 	HDC		_hdc_ = CreateCompatibleDC(NULL);
+// 	viewHeight = viewSize;
+// 	DWORD m_DIBWidth = viewSize * 2;
+// 	DWORD m_DIBHeight = viewSize;
+// 	DWORD m_BPP = 24;
 
-	// Create BITMAPINFOHEADER
-	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
-	int iSize = sizeof(BITMAPINFOHEADER);
-	::memset(m_PBIH, 0, iSize);
+// 	// Create BITMAPINFOHEADER
+// 	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
+// 	int iSize = sizeof(BITMAPINFOHEADER);
+// 	::memset(m_PBIH, 0, iSize);
 
-	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
-	m_PBIH->biWidth = m_DIBWidth;
-	m_PBIH->biHeight = m_DIBHeight;
-	m_PBIH->biPlanes = 1;
-	m_PBIH->biBitCount = m_BPP;
-	m_PBIH->biCompression = BI_RGB;
+// 	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
+// 	m_PBIH->biWidth = m_DIBWidth;
+// 	m_PBIH->biHeight = m_DIBHeight;
+// 	m_PBIH->biPlanes = 1;
+// 	m_PBIH->biBitCount = m_BPP;
+// 	m_PBIH->biCompression = BI_RGB;
 
-	// Create DIB
-	void* m_PBits;
-	HBITMAP m_hbitmap_old;
-	HBITMAP m_hbitmap = ::CreateDIBSection(
-		_hdc_,
-		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
-		&m_PBits, NULL, 0
-	);
+// 	// Create DIB
+// 	void* m_PBits;
+// 	HBITMAP m_hbitmap_old;
+// 	HBITMAP m_hbitmap = ::CreateDIBSection(
+// 		_hdc_,
+// 		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
+// 		&m_PBits, NULL, 0
+// 	);
 
-	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
-	DWORD dwLength;
-	if ((m_DIBWidth * 3) % 4 == 0) /* ÉoÉbÉtÉ@ÇÃÇPÉâÉCÉìÇÃí∑Ç≥ÇåvéZ */
-		dwLength = m_DIBWidth * 3;
-	else
-		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
+// 	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
+// 	DWORD dwLength;
+// 	if ((m_DIBWidth * 3) % 4 == 0) /* ÔøΩoÔøΩbÔøΩtÔøΩ@ÔøΩÃÇPÔøΩÔøΩÔøΩCÔøΩÔøΩÔøΩÃíÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩvÔøΩZ */
+// 		dwLength = m_DIBWidth * 3;
+// 	else
+// 		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
+// 	//	LPBYTE lpPixel,lpBuf;
+// 	//	lpBuf=(LPBYTE)GlobalAlloc(GPTR,sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+dwLength*m_DIBHeight);
+// 	//	lpPixel=lpBuf+sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER);
 
-	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
-	::SetPixelFormat(_hdc_, _pfid, &_pfd);
-	HGLRC	_hrc = ::wglCreateContext(_hdc_);
-	::wglMakeCurrent(_hdc_, _hrc);
-	Init(viewWidth_, viewHeight_, depthResolution);
-	glGetIntegerv(GL_VIEWPORT, view);
-	for (int i = 0; i < dataNum; i++) {
-		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
-		float* vertexp = vertexPointers[i];
-		for (int j = 0; j < vtNumArray[i]; j++) {
-			Vector3d tp;
-			Vector3d pp;
-			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+// 	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
+// 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
+// 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
+// 	::wglMakeCurrent(_hdc_, _hrc);
+// 	Init(viewWidth_, viewHeight_, depthResolution);
+// 	glGetIntegerv(GL_VIEWPORT, view);
+// 	for (int i = 0; i < dataNum; i++) {
+// 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+// 		float* vertexp = vertexPointers[i];
+// 		for (int j = 0; j < vtNumArray[i]; j++) {
+// 			Vector3d tp;
+// 			Vector3d pp;
+// 			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
 
-			sphericalTrans_renderer(tp, pp, cameraParameter);
-			trsVert[j * 3] = (float)tp(0, 0);
-			trsVert[j * 3 + 1] = (float)tp(1, 0);
-			trsVert[j * 3 + 2] = (float)tp(2, 0);
-			//			cout<<tp<<endl;
-		}
-		displayrgb(trsVert, facePointers[i], rgbaPointers[i], meshNumArray[i], vtNumArray[i]);
-		free(trsVert);
-	}
+// 			sphericalTrans_renderer(tp, pp, center, viewDirection);
+// 			trsVert[j * 3] = (float)tp(0, 0);
+// 			trsVert[j * 3 + 1] = (float)tp(1, 0);
+// 			trsVert[j * 3 + 2] = (float)tp(2, 0);
+// 			//			cout<<tp<<endl;
+// 		}
+// 		displayrgb(trsVert, facePointers[i], rgbaPointers[i], meshNumArray[i], vtNumArray[i]);
+// 		free(trsVert);
+// 	}
 
-	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
-	//	SelectObject(dhdc,m_hbitmap_old);
-	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
-	colorImage = (GLubyte*)malloc(sizeof(GLubyte)*view[2] * view[3] * 3);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_RGB, GL_UNSIGNED_BYTE, colorImage);
-	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
-	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
+// 	//	SelectObject(dhdc,m_hbitmap_old);
+// 	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
+// 	colorImage = (GLubyte*)malloc(sizeof(GLubyte)*view[2] * view[3] * 3);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_RGB, GL_UNSIGNED_BYTE, colorImage);
+// 	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
+// 	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
 
-	double th = M_PI / viewHeight;
-	Vector3d zdrc;
-	if (bNormalImage) {
-		for (int x = 0; x < viewHeight * 2; x++) {
-			for (int y = 0; y < viewHeight; y++) {
-				int idx = y * viewHeight * 2 + x;
-				if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0; continue; }
-				int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
-				int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
-				int preyidx = idx - viewHeight * 2;
-				int postyidx = idx + viewHeight * 2;
-				if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
-					normArray[idx] = 0;
-					continue;
-				}
+// 	double th = M_PI / viewHeight;
+// 	Vector3d zdrc;
 
-				/*double t=M_PI*(depthArray[postxidx]+depthArray[prexidx])*125/viewHeight;//125= viewOrtho far/4
+// 	for (int x = 0; x < viewHeight * 2; x++) {
+// 		for (int y = 0; y < viewHeight; y++) {
+// 			int idx = y * viewHeight * 2 + x;
+// 			if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0; continue; }
+// 			int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
+// 			int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
+// 			int preyidx = idx - viewHeight * 2;
+// 			int postyidx = idx + viewHeight * 2;
+// 			if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
+// 				normArray[idx] = 0;
+// 				continue;
+// 			}
 
-				double d=(depthArray[postxidx]-depthArray[prexidx])*500;
-				double t2=M_PI*(depthArray[postyidx]+depthArray[preyidx])*125/viewHeight;//125= viewOrtho far/4
-				double d2=(depthArray[postyidx]-depthArray[preyidx])*500;*/
-				Vector3d v1, v2;
-				v1 << (depthArray[prexidx] + depthArray[postxidx])*sin(th) * 500, 0, (depthArray[prexidx] - depthArray[postxidx])*cos(th) * 500;
-				v2 << 0, (depthArray[preyidx] + depthArray[postyidx])*sin(th) * 500, (depthArray[preyidx] - depthArray[postyidx])*cos(th) * 500;
-				Vector3d n;
-				n = v1.cross(v2);
-				if (n(2) < 0)n = -n;
-				n.normalize();
-				normArray[idx] = n(2);//max...2.0
-			}
-		}
-	}
-	//	GetObject(m_hbitmap,
+// 			/*double t=M_PI*(depthArray[postxidx]+depthArray[prexidx])*125/viewHeight;//125= viewOrtho far/4
 
-	glFlush();
-	glFinish();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	if (FALSE == ::wglMakeCurrent(0, 0))exit(ERROR);
-	if (FALSE == ::wglDeleteContext(_hrc))exit(ERROR);
-	//delete _hdc_;
-	//free(m_PBits);
-	DeleteDC(_hdc_);
-	DeleteObject(m_hbitmap);
+// 			double d=(depthArray[postxidx]-depthArray[prexidx])*500;
+// 			double t2=M_PI*(depthArray[postyidx]+depthArray[preyidx])*125/viewHeight;//125= viewOrtho far/4
+// 			double d2=(depthArray[postyidx]-depthArray[preyidx])*500;*/
+// 			Vector3d v1, v2;
+// 			v1 << (depthArray[prexidx] + depthArray[postxidx])*sin(th) * 500, 0, (depthArray[prexidx] - depthArray[postxidx])*cos(th) * 500;
+// 			v2 << 0, (depthArray[preyidx] + depthArray[postyidx])*sin(th) * 500, (depthArray[preyidx] - depthArray[postyidx])*cos(th) * 500;
+// 			Vector3d n;
+// 			n = v1.cross(v2);
+// 			if (n(2) < 0)n = -n;
+// 			n.normalize();
+// 			normArray[idx] = n(2);//max...2.0
+// 		}
+// 	}
+// 	//	GetObject(m_hbitmap,
+// 	::wglMakeCurrent(0, 0);
+// 	//	GlobalFree(lpBuf);
+// 	//	GlobalFree(lpBuf);
+// 	//	free(buffer);
+// 	// return 0;
+// }
 
-	//	::ReleaseDC(NULL,_hdc_);
-	//	GlobalFree(lpBuf);
-	//	GlobalFree(lpBuf);
-	//	free(buffer);
-	// return 0;
-}
+
+
+
+// void PanoramaRenderer::renderColor(Matrix4d& cameraParameter, int viewSize) {
+// 	PIXELFORMATDESCRIPTOR _pfd = {
+//  sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
+//  1,	//	Versin of this structure
+//  PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL |
+//  PFD_GENERIC_ACCELERATED,
+// 		//		PFD_GENERIC_FORMAT,
+// 				//	Pixel buffer flags
+// 				PFD_TYPE_RGBA,	//	Type of pixel data
+// 				24,	//	The number of color bitplanes
+// 				0, 0, 0, 0, 0, 0,	//	Number of each color bitplanes and shift count
+// 				0, 0,	//	Number of alpha bitplanes and shift count
+// 				0, 0, 0, 0, 0,	//	Number of accumulation bits
+// 				32,	//	Z depth
+// 				0,	//	Stencil depth
+// 				0,	//	Number of auxiliary buffers
+// 				PFD_MAIN_PLANE,	//	Ignored
+// 				0,	//	Reserved
+// 				0,	//	Ignored
+// 				0,	//	Transparent color value
+// 				0,	//	Ignored
+// 	};
+// 	GLint view[4];
+// 	HDC		_hdc_ = CreateCompatibleDC(NULL);
+// 	viewHeight = viewSize;
+// 	DWORD m_DIBWidth = viewSize * 2;
+// 	DWORD m_DIBHeight = viewSize;
+// 	DWORD m_BPP = 24;
+
+// 	// Create BITMAPINFOHEADER
+// 	BITMAPINFOHEADER* m_PBIH = new BITMAPINFOHEADER;
+// 	int iSize = sizeof(BITMAPINFOHEADER);
+// 	::memset(m_PBIH, 0, iSize);
+
+// 	m_PBIH->biSize = sizeof(BITMAPINFOHEADER);
+// 	m_PBIH->biWidth = m_DIBWidth;
+// 	m_PBIH->biHeight = m_DIBHeight;
+// 	m_PBIH->biPlanes = 1;
+// 	m_PBIH->biBitCount = m_BPP;
+// 	m_PBIH->biCompression = BI_RGB;
+
+// 	// Create DIB
+// 	void* m_PBits;
+// 	HBITMAP m_hbitmap_old;
+// 	HBITMAP m_hbitmap = ::CreateDIBSection(
+// 		_hdc_,
+// 		(BITMAPINFO*)m_PBIH, DIB_RGB_COLORS,
+// 		&m_PBits, NULL, 0
+// 	);
+
+// 	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
+// 	DWORD dwLength;
+// 	if ((m_DIBWidth * 3) % 4 == 0) /* ÔøΩoÔøΩbÔøΩtÔøΩ@ÔøΩÃÇPÔøΩÔøΩÔøΩCÔøΩÔøΩÔøΩÃíÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩvÔøΩZ */
+// 		dwLength = m_DIBWidth * 3;
+// 	else
+// 		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
+
+// 	int		_pfid = ChoosePixelFormat(_hdc_, &_pfd);
+// 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
+// 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
+// 	::wglMakeCurrent(_hdc_, _hrc);
+// 	Init(viewWidth_, viewHeight_, depthResolution);
+// 	glGetIntegerv(GL_VIEWPORT, view);
+// 	for (int i = 0; i < dataNum; i++) {
+// 		float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
+// 		float* vertexp = vertexPointers[i];
+// 		for (int j = 0; j < vtNumArray[i]; j++) {
+// 			Vector3d tp;
+// 			Vector3d pp;
+// 			pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
+
+// 			sphericalTrans_renderer(tp, pp, cameraParameter);
+// 			trsVert[j * 3] = (float)tp(0, 0);
+// 			trsVert[j * 3 + 1] = (float)tp(1, 0);
+// 			trsVert[j * 3 + 2] = (float)tp(2, 0);
+// 			//			cout<<tp<<endl;
+// 		}
+// 		displayrgb(trsVert, facePointers[i], rgbaPointers[i], meshNumArray[i], vtNumArray[i]);
+// 		free(trsVert);
+// 	}
+
+// 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
+// 	//	SelectObject(dhdc,m_hbitmap_old);
+// 	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
+// 	colorImage = (GLubyte*)malloc(sizeof(GLubyte)*view[2] * view[3] * 3);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_RGB, GL_UNSIGNED_BYTE, colorImage);
+// 	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+// 	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
+// 	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+
+// 	double th = M_PI / viewHeight;
+// 	Vector3d zdrc;
+// 	if (bNormalImage) {
+// 		for (int x = 0; x < viewHeight * 2; x++) {
+// 			for (int y = 0; y < viewHeight; y++) {
+// 				int idx = y * viewHeight * 2 + x;
+// 				if (y == 0 || y == viewHeight - 1) { normArray[idx] = 0; continue; }
+// 				int prexidx = x != 0 ? y * viewHeight * 2 + x - 1 : y * viewHeight * 2 + viewHeight * 2 - 1;
+// 				int postxidx = x != viewHeight * 2 - 1 ? y * viewHeight * 2 + x + 1 : y * viewHeight * 2;
+// 				int preyidx = idx - viewHeight * 2;
+// 				int postyidx = idx + viewHeight * 2;
+// 				if (depthArray[idx] == 1.0 || depthArray[prexidx] == 1.0 || depthArray[postxidx] == 1.0 || depthArray[preyidx] == 1.0 || depthArray[postyidx] == 1.0) {
+// 					normArray[idx] = 0;
+// 					continue;
+// 				}
+
+// 				/*double t=M_PI*(depthArray[postxidx]+depthArray[prexidx])*125/viewHeight;//125= viewOrtho far/4
+
+// 				double d=(depthArray[postxidx]-depthArray[prexidx])*500;
+// 				double t2=M_PI*(depthArray[postyidx]+depthArray[preyidx])*125/viewHeight;//125= viewOrtho far/4
+// 				double d2=(depthArray[postyidx]-depthArray[preyidx])*500;*/
+// 				Vector3d v1, v2;
+// 				v1 << (depthArray[prexidx] + depthArray[postxidx])*sin(th) * 500, 0, (depthArray[prexidx] - depthArray[postxidx])*cos(th) * 500;
+// 				v2 << 0, (depthArray[preyidx] + depthArray[postyidx])*sin(th) * 500, (depthArray[preyidx] - depthArray[postyidx])*cos(th) * 500;
+// 				Vector3d n;
+// 				n = v1.cross(v2);
+// 				if (n(2) < 0)n = -n;
+// 				n.normalize();
+// 				normArray[idx] = n(2);//max...2.0
+// 			}
+// 		}
+// 	}
+// 	//	GetObject(m_hbitmap,
+
+// 	glFlush();
+// 	glFinish();
+// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+// 	if (FALSE == ::wglMakeCurrent(0, 0))exit(ERROR);
+// 	if (FALSE == ::wglDeleteContext(_hrc))exit(ERROR);
+// 	//delete _hdc_;
+// 	//free(m_PBits);
+// 	DeleteDC(_hdc_);
+// 	DeleteObject(m_hbitmap);
+
+// 	//	::ReleaseDC(NULL,_hdc_);
+// 	//	GlobalFree(lpBuf);
+// 	//	GlobalFree(lpBuf);
+// 	//	free(buffer);
+// 	// return 0;
+// }
 
 //void PanoramaRenderer::outputReflectance(string fileName){
 //	ofstream	_os(fileName, ios::binary);
@@ -1126,6 +1063,7 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParameter, int viewSize) {
 //}
 
 void PanoramaRenderer::outputColor(string fileName) {
+#if defined(WIN32) || defined(WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1172,12 +1110,13 @@ void PanoramaRenderer::outputColor(string fileName) {
 	_os.close();
 
 	free(_buffer);
-
+#endif
 	return;
 
 }
 
 void PanoramaRenderer::outputReflectance(string fileName) {
+	#if defined(WIN32) || defined(WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1224,13 +1163,14 @@ void PanoramaRenderer::outputReflectance(string fileName) {
 	_os.close();
 
 	free(_buffer);
-
+#endif
 	return;
 
 }
 
 
 void PanoramaRenderer::outputDepth(string fileName) {
+	#if defined(WIN32) || defined(WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1277,7 +1217,7 @@ void PanoramaRenderer::outputDepth(string fileName) {
 	_os.close();
 
 	delete[]	_buffer;
-
+#endif
 	return;
 
 
@@ -1285,6 +1225,7 @@ void PanoramaRenderer::outputDepth(string fileName) {
 };
 
 void PanoramaRenderer::outputNorm(string fileName) {
+	#if defined(WIN32) || defined(WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1358,7 +1299,7 @@ void PanoramaRenderer::outputNorm(string fileName) {
 	_os.close();
 
 	delete[]	_buffer;
-
+#endif
 	return;
 
 
@@ -1385,11 +1326,11 @@ void display(float*& vertex, unsigned int*& face, float*& reflectance, int meshN
 		}
 	//	if vertex[index1 * 3 + ] - vertex[index2 * 3 + 1]);
 		double thres = 1.0;
-		if (vertex[index1 * 3 + 2] < thres || vertex[index2 * 3 + 2] < thres || vertex[index3 * 3 + 2] < thres)continue;//ãﬂãóó£ÇÕÉåÉìÉ_ÉäÉìÉOÇµÇ»Ç¢ÅiÇ®ÇÊÇªladybugÇÃîºåaï™Åj
+		if (vertex[index1 * 3 + 2] < thres || vertex[index2 * 3 + 2] < thres || vertex[index3 * 3 + 2] < thres)continue;//ÔøΩﬂãÔøΩÔøΩÔøΩÔøΩÕÉÔøΩÔøΩÔøΩÔøΩ_ÔøΩÔøΩÔøΩÔøΩÔøΩOÔøΩÔøΩÔøΩ»ÇÔøΩÔøΩiÔøΩÔøΩÔøΩÊÇªladybugÔøΩÃîÔøΩÔøΩaÔøΩÔøΩÔøΩj
 		//if (vertex[index1 * 3 + 1] < PI_VAL / 179 || vertex[index2 * 3 + 1] < PI_VAL / 179 || vertex[index3 * 3 + 1] < PI_VAL / 179)continue;
 		//if (vertex[index1 * 3 + 1] > PI_VAL - PI_VAL / 179 || vertex[index2 * 3 + 1] > PI_VAL - PI_VAL / 179 || vertex[index3 * 3 + 1] > PI_VAL - PI_VAL / 179)continue;
 		GLfloat gr;
-		//ÉpÉmÉâÉ}í[ì_ÇÃèàóù
+		//ÔøΩpÔøΩmÔøΩÔøΩÔøΩ}ÔøΩ[ÔøΩ_ÔøΩÃèÔøΩÔøΩÔøΩ
 		if (vertex[index1 * 3] * vertex[index2 * 3] < 0 && vertex[index1 * 3] * vertex[index3 * 3]>0 && abs(vertex[index1 * 3]) > PI_VAL / 2) {
 			double val = vertex[index2 * 3] < 0 ? PI_VAL * 2 : -PI_VAL * 2;
 			gr = reflectance[index1];
@@ -1495,12 +1436,12 @@ void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int m
 
 
 		double thres = 0.4;
-		if (vertex[index1 * 3 + 2] < thres || vertex[index2 * 3 + 2] < thres || vertex[index3 * 3 + 2] < thres)continue;//ãﬂãóó£ÇÕÉåÉìÉ_ÉäÉìÉOÇµÇ»Ç¢ÅiÇ®ÇÊÇªladybugÇÃîºåaï™Åj
+		if (vertex[index1 * 3 + 2] < thres || vertex[index2 * 3 + 2] < thres || vertex[index3 * 3 + 2] < thres)continue;//ÔøΩﬂãÔøΩÔøΩÔøΩÔøΩÕÉÔøΩÔøΩÔøΩÔøΩ_ÔøΩÔøΩÔøΩÔøΩÔøΩOÔøΩÔøΩÔøΩ»ÇÔøΩÔøΩiÔøΩÔøΩÔøΩÊÇªladybugÔøΩÃîÔøΩÔøΩaÔøΩÔøΩÔøΩj
 		//if (vertex[index1 * 3 + 1] < PI_VAL / 359 || vertex[index2 * 3 + 1] < PI_VAL / 359 || vertex[index3 * 3 + 1] < PI_VAL / 359)continue;
 		//if (vertex[index1 * 3 + 1] > PI_VAL - PI_VAL / 359 || vertex[index2 * 3 + 1] > PI_VAL - PI_VAL / 359 || vertex[index3 * 3 + 1] > PI_VAL - PI_VAL / 359)continue;
 		//if (vertex[index1 * 3 + 1] == vertex[index1 * 3 + 2]||||)continue;
 		GLfloat gr;
-		//ÉpÉmÉâÉ}í[ì_ÇÃèàóù
+		//ÔøΩpÔøΩmÔøΩÔøΩÔøΩ}ÔøΩ[ÔøΩ_ÔøΩÃèÔøΩÔøΩÔøΩ
 		if (vertex[index1 * 3] * vertex[index2 * 3] < 0 && vertex[index1 * 3] * vertex[index3 * 3]>0 && fabs(vertex[index1 * 3]) > PI_VAL / 2) {
 			double val = vertex[index2 * 3] < 0 ? PI_VAL * 2 : -PI_VAL * 2;
 			//gr=reflectance[index1];
@@ -1614,7 +1555,7 @@ void display_points(float*& vertex, unsigned int*& face, float*& reflectance, in
 
 }
 
-//ê¢äEç¿ïWånÇ…Ç®Ç¢ÇƒR,tÇæÇØà⁄ìÆÇµÇΩÉJÉÅÉâÇ…Ç®ÇØÇÈì_pÇÃïœä∑éÆÇÕ
+//ÔøΩÔøΩÔøΩEÔøΩÔøΩÔøΩWÔøΩnÔøΩ…ÇÔøΩÔøΩÔøΩÔøΩÔøΩR,tÔøΩÔøΩÔøΩÔøΩÔøΩ⁄ìÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩJÔøΩÔøΩÔøΩÔøΩÔøΩ…ÇÔøΩÔøΩÔøΩÔøΩÔøΩ_pÔøΩÃïœäÔøΩÔøΩÔøΩÔøΩÔøΩ
 //R*(pt-t)
 
 void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Vector3d& center, Matrix3d& rotMatrix) {
@@ -1671,13 +1612,13 @@ void Init(int viewWidth,int viewHeight, double depthResolution) {
 	glLoadIdentity();
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
-	//	  gluPerspective(90.0, (double)300/(double)300, 0.1, 100.0); //ìßéãìäâeñ@ÇÃéãëÃêœgluPerspactive(th, w/h, near, far);
+	//	  gluPerspective(90.0, (double)300/(double)300, 0.1, 100.0); //ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩeÔøΩ@ÔøΩÃéÔøΩÔøΩÃêÔøΩgluPerspactive(th, w/h, near, far);
 	glOrtho(-PI_VAL, PI_VAL, -PI_VAL, 0, 0, depthResolution);
 	//------------------------------------------------
 	gluLookAt(
-		0.0, 0.0, 0.0, // éãì_ÇÃà íux,y,z;
-		0.0, 0.0, 1.0,   // éãäEÇÃíÜêSà íuÇÃéQè∆ì_ç¿ïWx,y,z
-		0.0, -1.0, 0.0);  //éãäEÇÃè„ï˚å¸ÇÃÉxÉNÉgÉãx,y,z*/
+		0.0, 0.0, 0.0, // ÔøΩÔøΩÔøΩ_ÔøΩÃà íux,y,z;
+		0.0, 0.0, 1.0,   // ÔøΩÔøΩÔøΩEÔøΩÃíÔøΩÔøΩSÔøΩ íuÔøΩÃéQÔøΩ∆ì_ÔøΩÔøΩÔøΩWx,y,z
+		0.0, -1.0, 0.0);  //ÔøΩÔøΩÔøΩEÔøΩÃèÔøΩÔøΩÔøΩÔøΩÔøΩÃÉxÔøΩNÔøΩgÔøΩÔøΩx,y,z*/
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -1687,13 +1628,13 @@ void InitFE(int viewWidth, int viewHeight, double depthResolution) {
 	glLoadIdentity();
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
-	//	  gluPerspective(90.0, (double)300/(double)300, 0.1, 100.0); //ìßéãìäâeñ@ÇÃéãëÃêœgluPerspactive(th, w/h, near, far);
+	//	  gluPerspective(90.0, (double)300/(double)300, 0.1, 100.0); //ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩeÔøΩ@ÔøΩÃéÔøΩÔøΩÃêÔøΩgluPerspactive(th, w/h, near, far);
 	glOrtho(-PI_VAL/2, PI_VAL/2, -PI_VAL/2, PI_VAL / 2, 0.03, depthResolution);
 	//------------------------------------------------
 	gluLookAt(
-		0.0, 0.0, 0.0, // éãì_ÇÃà íux,y,z;
-		0.0, 0.0, 1.0,   // éãäEÇÃíÜêSà íuÇÃéQè∆ì_ç¿ïWx,y,z
-		0.0, -1.0, 0.0);  //éãäEÇÃè„ï˚å¸ÇÃÉxÉNÉgÉãx,y,z*/
+		0.0, 0.0, 0.0, // ÔøΩÔøΩÔøΩ_ÔøΩÃà íux,y,z;
+		0.0, 0.0, 1.0,   // ÔøΩÔøΩÔøΩEÔøΩÃíÔøΩÔøΩSÔøΩ íuÔøΩÃéQÔøΩ∆ì_ÔøΩÔøΩÔøΩWx,y,z
+		0.0, -1.0, 0.0);  //ÔøΩÔøΩÔøΩEÔøΩÃèÔøΩÔøΩÔøΩÔøΩÔøΩÃÉxÔøΩNÔøΩgÔøΩÔøΩx,y,z*/
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -1703,7 +1644,7 @@ void InitPers(int viewWidth, int viewHeight,double znear ,double depthResolution
 	glViewport(0, 0, viewWidth, viewHeight);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClearColor(1.0, 1.0, 0.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 
 	GLfloat m[16];
@@ -1755,6 +1696,8 @@ void InitPers(int viewWidth, int viewHeight,double znear ,double depthResolution
 }
 
 void PanoramaRenderer::createContext(int view_w,int view_h) {
+#if defined(WIN32) || defined(WIN64)
+
 	PIXELFORMATDESCRIPTOR _pfd = {
 sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
 1,	//	Versin of this structure
@@ -1810,7 +1753,7 @@ PFD_GENERIC_ACCELERATED,
 
 	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
 	DWORD dwLength;
-	if ((m_DIBWidth * 3) % 4 == 0) /* ÉoÉbÉtÉ@ÇÃÇPÉâÉCÉìÇÃí∑Ç≥ÇåvéZ */
+	if ((m_DIBWidth * 3) % 4 == 0) /* ÔøΩoÔøΩbÔøΩtÔøΩ@ÔøΩÃÇPÔøΩÔøΩÔøΩCÔøΩÔøΩÔøΩÃíÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩvÔøΩZ */
 		dwLength = m_DIBWidth * 3;
 	else
 		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
@@ -1819,9 +1762,53 @@ PFD_GENERIC_ACCELERATED,
 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
 	HGLRC	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
+#elif defined(__unix__)
+	 glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+    glXMakeContextCurrentARB   = (glXMakeContextCurrentARBProc)   glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent");
+
+    display_ = XOpenDisplay(NULL);
+    if (display_ == NULL){
+        std::cout  << "error getting the X display";
+    }
+
+    static int visualAttribs[] = {None};
+    int numberOfFrameBufferConfigurations;
+    GLXFBConfig *fbConfigs = glXChooseFBConfig(display_, DefaultScreen(display_), visualAttribs, &numberOfFrameBufferConfigurations);
+
+    int context_attribs[] = {
+        GLX_CONTEXT_MAJOR_VERSION_ARB ,3,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+        GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+        None
+    };
+
+    std::cout << "initialising context...";
+    this->openGLContext = glXCreateContextAttribsARB(display_, fbConfigs[0], 0, True, context_attribs);
+
+
+	viewWidth_ = viewWidth_stat = view_w;
+	viewHeight_ = viewHeight_stat = view_h;
+    int pBufferAttribs[] = {
+        GLX_PBUFFER_WIDTH, view_w,
+        GLX_PBUFFER_HEIGHT, view_h,
+        None
+    };
+
+    this->pbuffer = glXCreatePbuffer(display_, fbConfigs[0], pBufferAttribs);
+    XFree(fbConfigs);
+    XSync(display_, False);
+
+	if(!glXMakeContextCurrent(display_, pbuffer, pbuffer, openGLContext)){
+		std::cout << "error with content creation\n";
+	}else{
+		std::cout << "made a context the current context\n";
+	}
+	#endif
 }
 
 void PanoramaRenderer::createContext() {
+	#if defined(WIN32) || defined(WIN64)
 	PIXELFORMATDESCRIPTOR _pfd = {
 sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
 1,	//	Versin of this structure
@@ -1873,7 +1860,7 @@ PFD_GENERIC_ACCELERATED,
 
 	m_hbitmap_old = (HBITMAP)::SelectObject(_hdc_, m_hbitmap);
 	DWORD dwLength;
-	if ((m_DIBWidth * 3) % 4 == 0) /* ÉoÉbÉtÉ@ÇÃÇPÉâÉCÉìÇÃí∑Ç≥ÇåvéZ */
+	if ((m_DIBWidth * 3) % 4 == 0) /* ÔøΩoÔøΩbÔøΩtÔøΩ@ÔøΩÃÇPÔøΩÔøΩÔøΩCÔøΩÔøΩÔøΩÃíÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩvÔøΩZ */
 		dwLength = m_DIBWidth * 3;
 	else
 		dwLength = m_DIBWidth * 3 + (4 - (m_DIBWidth * 3) % 4);
@@ -1882,13 +1869,24 @@ PFD_GENERIC_ACCELERATED,
 	::SetPixelFormat(_hdc_, _pfid, &_pfd);
 	_hrc = ::wglCreateContext(_hdc_);
 	::wglMakeCurrent(_hdc_, _hrc);
+	#elif (__unix__)
+
+
+
+	#endif
 }
 
 void  PanoramaRenderer::discardContext() {
+#if defined(WIN32) || defined(WIN64)
 	if (FALSE == ::wglMakeCurrent(0, 0))exit(ERROR);
 	if (FALSE == ::wglDeleteContext(_hrc))exit(ERROR);
 	DeleteDC(_hdc_);
 	DeleteObject(m_hbitmap);
+#elif (__unix__)
+   
+
+
+#endif
 }
 
 int PanoramaRenderer::viewWidth_stat;
