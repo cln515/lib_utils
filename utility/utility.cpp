@@ -108,6 +108,23 @@ Matrix3d axisRot2R(double rx,double ry,double rz){
 			return retMat;
 }
 
+Matrix3f faxisRot2R(double rx, double ry, double rz) {
+	Matrix4f R, rotx, roty, rotz;
+	float sinv, cosv;
+	sinv = sin(rx), cosv = cos(rx);
+
+
+
+	rotx << 1, 0, 0, 0, 0, cosv, -sinv, 0, 0, sinv, cosv, 0, 0, 0, 0, 1;
+	sinv = sin(ry); cosv = cos(ry);
+	roty << cosv, 0, sinv, 0, 0, 1, 0, 0, -sinv, 0, cosv, 0, 0, 0, 0, 1;
+	sinv = sin(rz); cosv = cos(rz);
+	rotz << cosv, -sinv, 0, 0, sinv, cosv, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+	R = rotx * roty*rotz;
+	Matrix3f retMat = R.block(0, 0, 3, 3);
+	return retMat;
+}
+
 Matrix3d ladybug_rot2xyz (double rph[3])
 {
     double sr, sp, sh, cr, cp, ch;
@@ -150,6 +167,15 @@ _6dof m2_6dof(Matrix4d& m){
 
 };
 
+void _6dof2trans_quaternion(_6dof dof,Eigen::Vector3d& trans,Eigen::Vector4d& quaternion) {
+	trans << dof.x, dof.y, dof.z;
+	double s1 = sin(dof.rx), s2 = sin(dof.ry), s3 = sin(dof.rz), c1 = cos(dof.rx), c2 = cos(dof.ry), c3 = cos(dof.rz);
+	quaternion << s1 * s2*c3 + c1 * c2*s3,
+		s1*c2*c3+c1*s2*s3,
+		c1*s2*c3-s1*c2*s3,
+		c1*c2*c3-s1*s2*s3;
+
+}
 
 void int2rgba(int color,unsigned char& r,unsigned char& g,unsigned char& b,unsigned char& a){
 		r=(color&0x0000ff);
@@ -570,6 +596,42 @@ void FisheyeTrans(double x, double y, double z, double& u, double& v,
 	}
 }
 
+void FisheyeTransCV(double x, double y, double z, double& u, double& v,
+	double cx, double cy, double fx, double fy, double k1, double k2, double k3, double k4) {
+
+	if (z != 0) {
+		double x0 = x / z;
+		double y0 = y / z;
+		double r0 = sqrt(x0*x0 + y0 * y0);
+		if (z < 0)r0 = -r0;
+		double theta = atan(r0);
+		if (theta < 0)theta += M_PI;
+		double x_ = x0 / r0 * theta;
+		double y_ = y0 / r0 * theta;
+		double r = sqrt(x_ * x_ + y_ * y_);
+
+		double distv = (1 + k1 * std::pow(theta, 2) + k2 * std::pow(theta, 4) + k3 * std::pow(theta, 6) + k4 * std::pow(theta, 8));
+		double xd = x_ * distv;
+		double yd = y_ * distv;
+
+		u = cx + xd * fx;
+		v = cy + yd * fy;
+	}
+	else {
+		double theta = M_PI / 2;
+		double theta2 = theta * theta;
+		double theta4 = theta2 * theta2;
+		double theta6 = theta4 * theta2;
+		double theta8 = theta6 * theta2;
+		double distv = (1 + k1 * theta2 + k2 * theta4 + k3 * theta6 + k4 * theta8);
+		double r = x * x + y * y;
+		double xd = (distv)*x;
+		double yd = (distv)*y;
+		u = cx + xd * fx;
+		v = cy + yd * fy;
+	}
+}
+
 void rev_omniTrans(double x2d,double y2d,int width,int height,Vector3d& ret){
 		double theta=-(x2d*(M_PI*2)/width-M_PI);
 		double phi=y2d/height*M_PI;
@@ -709,4 +771,35 @@ Matrix4d lookat2matrix(double* lookatParam) {
 	ret.block(0, 3, 3, 1) = pos;
 
 	return ret;
+}
+
+Matrix4f flookat2matrix(double* lookatParam) {
+	Vector3f pos, lookat, upper;
+	pos << lookatParam[0], lookatParam[1], lookatParam[2];
+	lookat << lookatParam[3], lookatParam[4], lookatParam[5];
+	upper << lookatParam[6], lookatParam[7], lookatParam[8];
+
+	lookat = (lookat - pos).normalized();
+	Vector3f r1, r2, r3;
+	r3 = lookat;
+	r2 = -upper;
+	r1 = r2.cross(r3);
+	Matrix4f ret = Matrix4f::Identity();
+	ret.block(0, 0, 3, 1) = r1;
+	ret.block(0, 1, 3, 1) = r2;
+	ret.block(0, 2, 3, 1) = r3;
+	ret.block(0, 3, 3, 1) = pos;
+
+	return ret;
+}
+
+
+Matrix4f perspective2matrix(double fovy, double aspect, double znear, double zfar) {
+	Matrix4f m1_;
+	m1_ <<
+		1.0 / tan(aspect * fovy / 2), 0, 0, 0,
+		0, 1.0/tan(fovy/2), 0, 0,
+		0, 0, (zfar + znear) / (zfar - znear), -2 * zfar*znear / (zfar - znear),
+		0, 0, 1, 0;
+	return m1_;
 }

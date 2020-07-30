@@ -3,8 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <Eigen\Eigen>
-#include <Eigen\Core>
+#include <Eigen/Eigen>
+#include <Eigen/Core>
 #include <time.h> 
 
 #if defined(WIN32) || defined(WIN64)
@@ -103,12 +103,13 @@ struct matching{
 Vector4d dcm2q(Matrix3d& dcm);
 Matrix3d q2dcm(Vector4d& q);
 Matrix3d axisRot2R(double rx,double ry,double rz);
+Matrix3f faxisRot2R(double rx, double ry, double rz);
 Matrix3d ladybug_rot2xyz (double rph[3]);
 void R2axisRot(Matrix3d R,double& rx,double& ry,double& rz);
 
 Matrix4d _6dof2m(_6dof dof);
 _6dof m2_6dof(Matrix4d& m);
-
+void _6dof2trans_quaternion(_6dof dof, Eigen::Vector3d& trans, Eigen::Vector4d& quaternion);
 void mat2axis_angle(Matrix3d m, Vector3d& retv, double& angle);
 
 Matrix4d getMatrixFlomPly(string fn);
@@ -153,8 +154,11 @@ string getTimeStamp();
 void HSVAngle2Color(double radangle, unsigned char* rgb);
 void FisheyeTrans(double x, double y, double z, double& u, double& v,
 	double ox, double oy, double f, double k1, double k2=0, double k3=0, double b1=0);
-
+void FisheyeTransCV(double x, double y, double z, double& u, double& v,
+	double cx, double cy, double fx, double fy, double k1, double k2 = 0, double k3 = 0, double k4 = 0);
 Matrix4d lookat2matrix(double* lookatParam);
+Matrix4f flookat2matrix(double* lookatParam);
+Matrix4f perspective2matrix(double fovy,double aspect,double znear,double zfar);
 
 #endif
 

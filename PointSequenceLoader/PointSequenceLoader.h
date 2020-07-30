@@ -6,9 +6,10 @@
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 #include <utility\utility.h>
+#if USE_OPENCV
 #include <opencv2/opencv.hpp>
 #include <image_utility/image_utility.h>
-
+#endif
 
 
 class PointSequenceLoader {
@@ -20,7 +21,9 @@ public:
 	void writePlyReflectance(string filePath, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip);
 	void writePlyReflectance(string filePath, string filePathPreview, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip);
 	void getPCReflectance(double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip, vector<float>& v, vector<float>& rf);
+#if USE_OPENCV
 	void getPCColor(double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, vector<string>imgFileNameList, vector<float>& v, vector<uchar>& rgba, int skip = 0);
+#endif
 	__int64 seekByTime(double t);
 
 private:
