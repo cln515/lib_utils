@@ -459,16 +459,16 @@ Matrix4d readCPara(string fileName){
 					getline(ifs,line);
 					float position[3];
 					for(int i=0;i<3;i++){
-						if(i!=2)position[i]=stof(line.substr(0,line.find_first_of(" ")));
-						else position[i]=stof(line);
+						if(i!=2)position[i]=stod(line.substr(0,line.find_first_of(" ")));
+						else position[i]=stod(line);
 						line.erase(0,line.find_first_of(" ")+1);
 					}
 					getline(ifs,line);//"Camera pose"
 					getline(ifs,line);
 					float pose[4];
 					for(int i=0;i<4;i++){
-						if(i!=3)pose[i]=stof(line.substr(0,line.find_first_of(" ")));
-						else pose[i]=stof(line);
+						if(i!=3)pose[i]=stod(line.substr(0,line.find_first_of(" ")));
+						else pose[i]=stod(line);
 						line.erase(0,line.find_first_of(" ")+1);
 					}
 					ifs.close();
