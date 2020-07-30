@@ -204,7 +204,7 @@ bool SensorFusion::setMask(string workMaskPath) {
 	stat.mask = cv::imread(workMaskPath, 0);
 	if (stat.mask.cols > 0) {
 		stat.bMask = true;
-		cv::resize(stat.mask, stat.mask, cv::Size(2048, 1024));
+	//	cv::resize(stat.mask, stat.mask, cv::Size(2048, 1024));
 	}
 	else stat.bMask = false;
 	return stat.bMask;
