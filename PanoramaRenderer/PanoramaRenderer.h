@@ -7,10 +7,12 @@
 #include <iostream>
 #include"Eigen/Eigen"
 #include"Eigen/Core"
-#include<GL/gl.h>
-#include<GL/glu.h>
+
+
 #if defined(WIN32) || defined(WIN64)
 // Windows 32-bit and 64-bit
+#include<GL/gl.h>
+#include<GL/glu.h>
 #include <Windows.h>
 
 #elif defined(MAC_OSX)
@@ -19,8 +21,10 @@
 #else
 // Linux and all others
 // Using GCC 4 where hiding attributes is possible
+#include <GL/glew.h>
+#include<GL/gl.h>
+#include<GL/glu.h>
 #include<GL/glx.h>
-
 
 #endif
 //#include<gl/glew.h>

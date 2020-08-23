@@ -475,7 +475,10 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 
 
 void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
-
+	#if defined(__unix__)
+	// XEvent xev;
+	// XNextEvent(display_, &xev);
+	#endif
 	GLint view[4];
 
 	if (type == PERSPECTIVE) {
@@ -501,7 +504,6 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 
 			const GLfloat lightPos[] = { 0 , 0 , 0 , 1.0 };
 			const GLfloat lightCol[] = { 1 , 0 , 0 , 1.0 };
-
 
 			//float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
 			glBegin(GL_TRIANGLES);
@@ -562,9 +564,52 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 				glVertex3f(trsVert[index2 * 3], trsVert[index2 * 3 + 1], trsVert[index2 * 3 + 2]);
 				glColor3ub(rgbaPointers[i][index3 * 4], rgbaPointers[i][index3 * 4 + 1], rgbaPointers[i][index3 * 4 + 2]);
 				glVertex3f(trsVert[index3 * 3], trsVert[index3 * 3 + 1], trsVert[index3 * 3 + 2]);
-
 			}
 			glEnd();
+
+
+//test
+std::vector<double> vertices;// = { 0, 0, 0,  1, 0, 0,  1, 1, 0,  0, 1, 0 };
+    vertices.push_back(0);vertices.push_back(0);vertices.push_back(3);
+	    vertices.push_back(1);vertices.push_back(0);vertices.push_back(3);
+		    vertices.push_back(1);vertices.push_back(1);vertices.push_back(3);
+			    vertices.push_back(0);vertices.push_back(1);vertices.push_back(3);
+    std::vector<int> indices;// = { 0, 1, 2,  0, 2, 3 };
+    indices.push_back(0);
+    indices.push_back(1);
+    indices.push_back(2);
+ 
+    indices.push_back(0);
+    indices.push_back(2);
+    indices.push_back(3);
+ 
+ GLuint vrtVBO,idxVBO;
+    glGenBuffers(1, &vrtVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, vrtVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size()*3*sizeof(double), (GLdouble*)&vertices[0], GL_STATIC_DRAW);
+ 
+    glGenBuffers(1, &idxVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(int), &indices[0], GL_STATIC_DRAW);
+
+	    glBindBuffer(GL_ARRAY_BUFFER, vrtVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxVBO);
+ 
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_DOUBLE, 0, 0);
+ 
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+ 
+    glDisableClientState(GL_VERTEX_ARRAY); 
+ 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    glDeleteBuffers(1, &vrtVBO);
+    glDeleteBuffers(1, &idxVBO);
+	std::cout<<"pikumin!!"<<std::endl;
+	glFlush();
+//test end
 
 			free(trsVert);
 		}
@@ -593,12 +638,17 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
 	//	SelectObject(dhdc,m_hbitmap_old);
 	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
+
 	colorImage = (GLubyte*)malloc(sizeof(GLubyte)*view[2] * view[3] * 3);
 	glReadPixels(view[0], view[1], view[2], view[3], GL_RGB, GL_UNSIGNED_BYTE, colorImage);
 	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
 	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
-	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-
+	//normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+#if defined(__unix__)
+//std::cout <<"swap"<<std::endl;
+//	glXSwapBuffers(display_, pbuffer);
+//	glReadBuffer(GL_BACK);
+#endif
 	//::wglMakeCurrent(0, 0);
 	//	GlobalFree(lpBuf);
 	//	GlobalFree(lpBuf);
@@ -1626,7 +1676,7 @@ void InitFE(int viewWidth, int viewHeight, double depthResolution) {
 	glViewport(0, 0, viewWidth, viewHeight);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClearColor(1.0, 1.0, 0.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	//	  gluPerspective(90.0, (double)300/(double)300, 0.1, 100.0); //�������e�@�̎��̐�gluPerspactive(th, w/h, near, far);
 	glOrtho(-PI_VAL/2, PI_VAL/2, -PI_VAL/2, PI_VAL / 2, 0.03, depthResolution);
@@ -1636,6 +1686,7 @@ void InitFE(int viewWidth, int viewHeight, double depthResolution) {
 		0.0, 0.0, 1.0,   // ���E�̒��S�ʒu�̎Q�Ɠ_���Wx,y,z
 		0.0, -1.0, 0.0);  //���E�̏�����̃x�N�g��x,y,z*/
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	    glFlush();
 }
 
 
@@ -1771,15 +1822,26 @@ PFD_GENERIC_ACCELERATED,
         std::cout  << "error getting the X display";
     }
 
-    static int visualAttribs[] = {None};
+    static int visualAttribs[] = {
+		GLX_X_RENDERABLE    , True,
+		    GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+		    GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
+    GLX_RED_SIZE,       8,
+    GLX_GREEN_SIZE,     8,
+    GLX_BLUE_SIZE,      8,
+    GLX_ALPHA_SIZE,     8,
+    GLX_DEPTH_SIZE,     24,
+    GLX_STENCIL_SIZE,   8,
+			GLX_DOUBLEBUFFER    , True,
+		None};
     int numberOfFrameBufferConfigurations;
     GLXFBConfig *fbConfigs = glXChooseFBConfig(display_, DefaultScreen(display_), visualAttribs, &numberOfFrameBufferConfigurations);
 
     int context_attribs[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB ,3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-        GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
-        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+        GLX_CONTEXT_MAJOR_VERSION_ARB ,2,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+   //     GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+   //     GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
         None
     };
 
@@ -1871,7 +1933,67 @@ PFD_GENERIC_ACCELERATED,
 	::wglMakeCurrent(_hdc_, _hrc);
 	#elif (__unix__)
 
+	 glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+    glXMakeContextCurrentARB   = (glXMakeContextCurrentARBProc)   glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent");
 
+    display_ = XOpenDisplay(NULL);
+    if (display_ == NULL){
+        std::cout  << "error getting the X display";
+    }
+
+    static int visualAttribs[] = {
+		    GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+		    GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
+			    GLX_DOUBLEBUFFER,   True,
+    GLX_RED_SIZE,       8,
+    GLX_GREEN_SIZE,     8,
+    GLX_BLUE_SIZE,      8,
+    GLX_ALPHA_SIZE,     8,
+    GLX_DEPTH_SIZE,     24,
+    GLX_STENCIL_SIZE,   8,
+		None};
+    int numberOfFrameBufferConfigurations;
+    GLXFBConfig *fbConfigs = glXChooseFBConfig(display_, DefaultScreen(display_), visualAttribs, &numberOfFrameBufferConfigurations);
+
+    int context_attribs[] = {
+        GLX_CONTEXT_MAJOR_VERSION_ARB ,3,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+//		GLX_RENDER_TYPE, GLX_RGBA_BIT,
+//		GLX_DRAWABLE_TYPE,GLX_PBUFFER_BIT,
+    	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+        None
+    };
+
+    std::cout << "initialising context...";
+    this->openGLContext = glXCreateContextAttribsARB(display_, fbConfigs[0], 0, True, context_attribs);
+
+
+//	viewWidth_ = viewWidth_stat = view_w;
+//	viewHeight_ = viewHeight_stat = view_h;
+    int pBufferAttribs[] = {
+        GLX_PBUFFER_WIDTH, viewWidth_,
+        GLX_PBUFFER_HEIGHT, viewHeight_,
+        None
+    };
+
+    this->pbuffer = glXCreatePbuffer(display_, fbConfigs[0], pBufferAttribs);
+    XFree(fbConfigs);
+    XSync(display_, False);
+
+	if(!glXMakeContextCurrent(display_, pbuffer, pbuffer, openGLContext)){
+		std::cout << "error with content creation\n";
+	}else{
+		std::cout << "made a context the current context\n";
+	}
+    glewExperimental = GL_TRUE;
+    GLenum err = glewInit();
+    if (err != GLEW_OK) {
+      std::cerr << glewGetErrorString(err) << std::endl;
+      throw std::runtime_error("Failed to initialize GLEW.");
+    }
+
+    std::cout << "GLEW initialized." << std::endl;
 
 	#endif
 }

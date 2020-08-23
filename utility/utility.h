@@ -20,7 +20,7 @@
 #else
 // Linux and all others
 // Using GCC 4 where hiding attributes is possible
-
+#include <sys/stat.h>
 
 #endif
 
