@@ -480,7 +480,10 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 	// XNextEvent(display_, &xev);
 	#endif
 	GLint view[4];
-
+	GLint maj_v,min_v;
+	glGetIntegerv(GL_MAJOR_VERSION, &maj_v);
+	glGetIntegerv(GL_MINOR_VERSION, &min_v);
+    std::cout << maj_v<<","<<min_v << std::endl;
 	if (type == PERSPECTIVE) {
 		InitPers(viewWidth_, viewHeight_, znear, depthResolution, intrinsic);
 		glGetIntegerv(GL_VIEWPORT, view);
@@ -569,45 +572,36 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 
 
 //test
-std::vector<double> vertices;// = { 0, 0, 0,  1, 0, 0,  1, 1, 0,  0, 1, 0 };
-    vertices.push_back(0);vertices.push_back(0);vertices.push_back(3);
-	    vertices.push_back(1);vertices.push_back(0);vertices.push_back(3);
-		    vertices.push_back(1);vertices.push_back(1);vertices.push_back(3);
-			    vertices.push_back(0);vertices.push_back(1);vertices.push_back(3);
-    std::vector<int> indices;// = { 0, 1, 2,  0, 2, 3 };
-    indices.push_back(0);
-    indices.push_back(1);
-    indices.push_back(2);
- 
-    indices.push_back(0);
-    indices.push_back(2);
-    indices.push_back(3);
- 
- GLuint vrtVBO,idxVBO;
-    glGenBuffers(1, &vrtVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, vrtVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size()*3*sizeof(double), (GLdouble*)&vertices[0], GL_STATIC_DRAW);
- 
-    glGenBuffers(1, &idxVBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxVBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(int), &indices[0], GL_STATIC_DRAW);
+// static const GLfloat g_vertex_buffer_data[] = {
+//    -1.0f, -1.0f, 3.0f,
+//    1.0f, -1.0f, 3.0f,
+//    0.0f,  1.0f, 3.0f,
+// };
+//  // これが頂点バッファを指し示すものとなります。
+// GLuint vertexbuffer;
+// // バッファを1つ作り、vertexbufferに結果IDを入れます。
+// glGenBuffers(1, &vertexbuffer);
+// // 次のコマンドは'vertexbuffer'バッファについてです。
+// glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+// // 頂点をOpenGLに渡します。
+// glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
-	    glBindBuffer(GL_ARRAY_BUFFER, vrtVBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxVBO);
- 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_DOUBLE, 0, 0);
- 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
- 
-    glDisableClientState(GL_VERTEX_ARRAY); 
- 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+// 	glEnableVertexAttribArray(0);
+// 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+// 	glVertexAttribPointer(
+// 	0,                  // 属性0：0に特に理由はありません。しかし、シェーダ内のlayoutとあわせないといけません。
+// 	3,                  // サイズ
+// 	GL_FLOAT,           // タイプ
+// 	GL_FALSE,           // 正規化？
+// 	0,                  // ストライド
+// 	(void*)0            // 配列バッファオフセット
+// 	);
 
-    glDeleteBuffers(1, &vrtVBO);
-    glDeleteBuffers(1, &idxVBO);
-	std::cout<<"pikumin!!"<<std::endl;
+// 	// 三角形を描きます！
+// 	glDrawArrays(GL_TRIANGLES, 0, 3); // 頂点0から始まります。合計3つの頂点です。&rarr;1つの三角形です。
+
+// 	glDisableVertexAttribArray(0);
+// 	std::cout<<"pikumin!!"<<std::endl;
 	glFlush();
 //test end
 
@@ -1676,7 +1670,7 @@ void InitFE(int viewWidth, int viewHeight, double depthResolution) {
 	glViewport(0, 0, viewWidth, viewHeight);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glClearColor(1.0, 1.0, 0.0, 1.0);
+	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	//	  gluPerspective(90.0, (double)300/(double)300, 0.1, 100.0); //�������e�@�̎��̐�gluPerspactive(th, w/h, near, far);
 	glOrtho(-PI_VAL/2, PI_VAL/2, -PI_VAL/2, PI_VAL / 2, 0.03, depthResolution);
@@ -1695,7 +1689,7 @@ void InitPers(int viewWidth, int viewHeight,double znear ,double depthResolution
 	glViewport(0, 0, viewWidth, viewHeight);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glClearColor(1.0, 1.0, 0.0, 1.0);
+	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 
 	GLfloat m[16];
@@ -1956,8 +1950,8 @@ PFD_GENERIC_ACCELERATED,
     GLXFBConfig *fbConfigs = glXChooseFBConfig(display_, DefaultScreen(display_), visualAttribs, &numberOfFrameBufferConfigurations);
 
     int context_attribs[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB ,3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+//        GLX_CONTEXT_MAJOR_VERSION_ARB ,3,
+ //       GLX_CONTEXT_MINOR_VERSION_ARB, 2,
 //		GLX_RENDER_TYPE, GLX_RGBA_BIT,
 //		GLX_DRAWABLE_TYPE,GLX_PBUFFER_BIT,
     	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
@@ -1994,6 +1988,7 @@ PFD_GENERIC_ACCELERATED,
     }
 
     std::cout << "GLEW initialized." << std::endl;
+
 
 	#endif
 }
