@@ -1980,14 +1980,14 @@ PFD_GENERIC_ACCELERATED,
 	}else{
 		std::cout << "made a context the current context\n";
 	}
-    glewExperimental = GL_TRUE;
-    GLenum err = glewInit();
-    if (err != GLEW_OK) {
-      std::cerr << glewGetErrorString(err) << std::endl;
-      throw std::runtime_error("Failed to initialize GLEW.");
-    }
+    // glewExperimental = GL_TRUE;
+    // GLenum err = glewInit();
+    // if (err != GLEW_OK) {
+    //   std::cerr << glewGetErrorString(err) << std::endl;
+    //   throw std::runtime_error("Failed to initialize GLEW.");
+    // }
 
-    std::cout << "GLEW initialized." << std::endl;
+    // std::cout << "GLEW initialized." << std::endl;
 
 
 	#endif

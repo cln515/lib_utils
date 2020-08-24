@@ -21,7 +21,7 @@
 #else
 // Linux and all others
 // Using GCC 4 where hiding attributes is possible
-#include <GL/glew.h>
+//#include <GL/glew.h>
 #include<GL/gl.h>
 #include<GL/glu.h>
 #include<GL/glx.h>
