@@ -9,11 +9,11 @@
 #include"Eigen/Core"
 
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 // Windows 32-bit and 64-bit
+#include <Windows.h>
 #include<GL/gl.h>
 #include<GL/glu.h>
-#include <Windows.h>
 
 #elif defined(MAC_OSX)
 // Mac OSX
@@ -135,7 +135,7 @@ public:
 	bool isPers() { return type==PERSPECTIVE; };
 	render_type getType() { return type; }
 private:
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	HDC		_hdc_;
 	HBITMAP m_hbitmap;
 	HGLRC	_hrc;

@@ -4,7 +4,7 @@
 using namespace std;
 using namespace Eigen;
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 HDC dhdc;
 #elif defined(__unix__)
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
@@ -481,8 +481,8 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 	#endif
 	GLint view[4];
 	GLint maj_v,min_v;
-	glGetIntegerv(GL_MAJOR_VERSION, &maj_v);
-	glGetIntegerv(GL_MINOR_VERSION, &min_v);
+	//glGetIntegerv(GL_MAJOR_VERSION, &maj_v);
+	//glGetIntegerv(GL_MINOR_VERSION, &min_v);
     std::cout << maj_v<<","<<min_v << std::endl;
 	if (type == PERSPECTIVE) {
 		InitPers(viewWidth_, viewHeight_, znear, depthResolution, intrinsic);
@@ -1107,7 +1107,7 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 //}
 
 void PanoramaRenderer::outputColor(string fileName) {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1160,7 +1160,7 @@ void PanoramaRenderer::outputColor(string fileName) {
 }
 
 void PanoramaRenderer::outputReflectance(string fileName) {
-	#if defined(WIN32) || defined(WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1214,7 +1214,7 @@ void PanoramaRenderer::outputReflectance(string fileName) {
 
 
 void PanoramaRenderer::outputDepth(string fileName) {
-	#if defined(WIN32) || defined(WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1269,7 +1269,7 @@ void PanoramaRenderer::outputDepth(string fileName) {
 };
 
 void PanoramaRenderer::outputNorm(string fileName) {
-	#if defined(WIN32) || defined(WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1741,7 +1741,7 @@ void InitPers(int viewWidth, int viewHeight,double znear ,double depthResolution
 }
 
 void PanoramaRenderer::createContext(int view_w,int view_h) {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 
 	PIXELFORMATDESCRIPTOR _pfd = {
 sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
@@ -1864,7 +1864,7 @@ PFD_GENERIC_ACCELERATED,
 }
 
 void PanoramaRenderer::createContext() {
-	#if defined(WIN32) || defined(WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	PIXELFORMATDESCRIPTOR _pfd = {
 sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
 1,	//	Versin of this structure
@@ -1994,7 +1994,7 @@ PFD_GENERIC_ACCELERATED,
 }
 
 void  PanoramaRenderer::discardContext() {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	if (FALSE == ::wglMakeCurrent(0, 0))exit(ERROR);
 	if (FALSE == ::wglDeleteContext(_hrc))exit(ERROR);
 	DeleteDC(_hdc_);
