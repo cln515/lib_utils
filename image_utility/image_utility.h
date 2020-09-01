@@ -5,7 +5,7 @@
 #include <opencv2/video/tracking.hpp>
 
 #include "basicPly/BasicPly.h"
-#include "utility\utility.h"
+#include "utility/utility.h"
 
 using namespace Eigen;
 

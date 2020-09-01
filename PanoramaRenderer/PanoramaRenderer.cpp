@@ -4,7 +4,7 @@
 using namespace std;
 using namespace Eigen;
 
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 HDC dhdc;
 #elif defined(__unix__)
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
@@ -475,9 +475,15 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 
 
 void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
-
+	#if defined(__unix__)
+	// XEvent xev;
+	// XNextEvent(display_, &xev);
+	#endif
 	GLint view[4];
-
+	GLint maj_v,min_v;
+	//glGetIntegerv(GL_MAJOR_VERSION, &maj_v);
+	//glGetIntegerv(GL_MINOR_VERSION, &min_v);
+    std::cout << maj_v<<","<<min_v << std::endl;
 	if (type == PERSPECTIVE) {
 		InitPers(viewWidth_, viewHeight_, znear, depthResolution, intrinsic);
 		glGetIntegerv(GL_VIEWPORT, view);
@@ -501,7 +507,6 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 
 			const GLfloat lightPos[] = { 0 , 0 , 0 , 1.0 };
 			const GLfloat lightCol[] = { 1 , 0 , 0 , 1.0 };
-
 
 			//float* trsVert = (float*)malloc(sizeof(float)*vtNumArray[i] * 3);
 			glBegin(GL_TRIANGLES);
@@ -562,9 +567,43 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 				glVertex3f(trsVert[index2 * 3], trsVert[index2 * 3 + 1], trsVert[index2 * 3 + 2]);
 				glColor3ub(rgbaPointers[i][index3 * 4], rgbaPointers[i][index3 * 4 + 1], rgbaPointers[i][index3 * 4 + 2]);
 				glVertex3f(trsVert[index3 * 3], trsVert[index3 * 3 + 1], trsVert[index3 * 3 + 2]);
-
 			}
 			glEnd();
+
+
+//test
+// static const GLfloat g_vertex_buffer_data[] = {
+//    -1.0f, -1.0f, 3.0f,
+//    1.0f, -1.0f, 3.0f,
+//    0.0f,  1.0f, 3.0f,
+// };
+//  // これが頂点バッファを指し示すものとなります。
+// GLuint vertexbuffer;
+// // バッファを1つ作り、vertexbufferに結果IDを入れます。
+// glGenBuffers(1, &vertexbuffer);
+// // 次のコマンドは'vertexbuffer'バッファについてです。
+// glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+// // 頂点をOpenGLに渡します。
+// glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+
+// 	glEnableVertexAttribArray(0);
+// 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+// 	glVertexAttribPointer(
+// 	0,                  // 属性0：0に特に理由はありません。しかし、シェーダ内のlayoutとあわせないといけません。
+// 	3,                  // サイズ
+// 	GL_FLOAT,           // タイプ
+// 	GL_FALSE,           // 正規化？
+// 	0,                  // ストライド
+// 	(void*)0            // 配列バッファオフセット
+// 	);
+
+// 	// 三角形を描きます！
+// 	glDrawArrays(GL_TRIANGLES, 0, 3); // 頂点0から始まります。合計3つの頂点です。&rarr;1つの三角形です。
+
+// 	glDisableVertexAttribArray(0);
+// 	std::cout<<"pikumin!!"<<std::endl;
+	glFlush();
+//test end
 
 			free(trsVert);
 		}
@@ -593,12 +632,17 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 	//	BitBlt(dhdc,0,0,m_DIBWidth,m_DIBHeight,_hdc_,0,0,SRCCOPY);
 	//	SelectObject(dhdc,m_hbitmap_old);
 	//	GetDIBits(_hdc_,m_hbitmap,0,m_DIBHeight,lpPixel,(LPBITMAPINFO)m_PBIH,DIB_RGB_COLORS);
+
 	colorImage = (GLubyte*)malloc(sizeof(GLubyte)*view[2] * view[3] * 3);
 	glReadPixels(view[0], view[1], view[2], view[3], GL_RGB, GL_UNSIGNED_BYTE, colorImage);
 	depthArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
 	glReadPixels(view[0], view[1], view[2], view[3], GL_DEPTH_COMPONENT, GL_FLOAT, depthArray);
-	normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
-
+	//normArray = (GLfloat*)malloc(sizeof(GLfloat)*view[2] * view[3]);
+#if defined(__unix__)
+//std::cout <<"swap"<<std::endl;
+//	glXSwapBuffers(display_, pbuffer);
+//	glReadBuffer(GL_BACK);
+#endif
 	//::wglMakeCurrent(0, 0);
 	//	GlobalFree(lpBuf);
 	//	GlobalFree(lpBuf);
@@ -1063,7 +1107,7 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 //}
 
 void PanoramaRenderer::outputColor(string fileName) {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1116,7 +1160,7 @@ void PanoramaRenderer::outputColor(string fileName) {
 }
 
 void PanoramaRenderer::outputReflectance(string fileName) {
-	#if defined(WIN32) || defined(WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1170,7 +1214,7 @@ void PanoramaRenderer::outputReflectance(string fileName) {
 
 
 void PanoramaRenderer::outputDepth(string fileName) {
-	#if defined(WIN32) || defined(WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1225,7 +1269,7 @@ void PanoramaRenderer::outputDepth(string fileName) {
 };
 
 void PanoramaRenderer::outputNorm(string fileName) {
-	#if defined(WIN32) || defined(WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	ofstream	_os(fileName, ios::binary);
 	if (!_os.is_open())
 		return;
@@ -1636,6 +1680,7 @@ void InitFE(int viewWidth, int viewHeight, double depthResolution) {
 		0.0, 0.0, 1.0,   // ���E�̒��S�ʒu�̎Q�Ɠ_���Wx,y,z
 		0.0, -1.0, 0.0);  //���E�̏�����̃x�N�g��x,y,z*/
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	    glFlush();
 }
 
 
@@ -1644,7 +1689,7 @@ void InitPers(int viewWidth, int viewHeight,double znear ,double depthResolution
 	glViewport(0, 0, viewWidth, viewHeight);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glClearColor(1.0, 1.0, 0.0, 1.0);
+	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 
 	GLfloat m[16];
@@ -1696,7 +1741,7 @@ void InitPers(int viewWidth, int viewHeight,double znear ,double depthResolution
 }
 
 void PanoramaRenderer::createContext(int view_w,int view_h) {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 
 	PIXELFORMATDESCRIPTOR _pfd = {
 sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
@@ -1771,15 +1816,26 @@ PFD_GENERIC_ACCELERATED,
         std::cout  << "error getting the X display";
     }
 
-    static int visualAttribs[] = {None};
+    static int visualAttribs[] = {
+		GLX_X_RENDERABLE    , True,
+		    GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+		    GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
+    GLX_RED_SIZE,       8,
+    GLX_GREEN_SIZE,     8,
+    GLX_BLUE_SIZE,      8,
+    GLX_ALPHA_SIZE,     8,
+    GLX_DEPTH_SIZE,     24,
+    GLX_STENCIL_SIZE,   8,
+			GLX_DOUBLEBUFFER    , True,
+		None};
     int numberOfFrameBufferConfigurations;
     GLXFBConfig *fbConfigs = glXChooseFBConfig(display_, DefaultScreen(display_), visualAttribs, &numberOfFrameBufferConfigurations);
 
     int context_attribs[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB ,3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-        GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
-        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+        GLX_CONTEXT_MAJOR_VERSION_ARB ,2,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+   //     GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+   //     GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
         None
     };
 
@@ -1808,7 +1864,7 @@ PFD_GENERIC_ACCELERATED,
 }
 
 void PanoramaRenderer::createContext() {
-	#if defined(WIN32) || defined(WIN64)
+	#if defined(_WIN32) || defined(_WIN64)
 	PIXELFORMATDESCRIPTOR _pfd = {
 sizeof(PIXELFORMATDESCRIPTOR),	//	Size of this struct
 1,	//	Versin of this structure
@@ -1871,13 +1927,74 @@ PFD_GENERIC_ACCELERATED,
 	::wglMakeCurrent(_hdc_, _hrc);
 	#elif (__unix__)
 
+	 glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+    glXMakeContextCurrentARB   = (glXMakeContextCurrentARBProc)   glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent");
+
+    display_ = XOpenDisplay(NULL);
+    if (display_ == NULL){
+        std::cout  << "error getting the X display";
+    }
+
+    static int visualAttribs[] = {
+		    GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+		    GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
+			    GLX_DOUBLEBUFFER,   True,
+    GLX_RED_SIZE,       8,
+    GLX_GREEN_SIZE,     8,
+    GLX_BLUE_SIZE,      8,
+    GLX_ALPHA_SIZE,     8,
+    GLX_DEPTH_SIZE,     24,
+    GLX_STENCIL_SIZE,   8,
+		None};
+    int numberOfFrameBufferConfigurations;
+    GLXFBConfig *fbConfigs = glXChooseFBConfig(display_, DefaultScreen(display_), visualAttribs, &numberOfFrameBufferConfigurations);
+
+    int context_attribs[] = {
+//        GLX_CONTEXT_MAJOR_VERSION_ARB ,3,
+ //       GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+//		GLX_RENDER_TYPE, GLX_RGBA_BIT,
+//		GLX_DRAWABLE_TYPE,GLX_PBUFFER_BIT,
+    	GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+        None
+    };
+
+    std::cout << "initialising context...";
+    this->openGLContext = glXCreateContextAttribsARB(display_, fbConfigs[0], 0, True, context_attribs);
+
+
+//	viewWidth_ = viewWidth_stat = view_w;
+//	viewHeight_ = viewHeight_stat = view_h;
+    int pBufferAttribs[] = {
+        GLX_PBUFFER_WIDTH, viewWidth_,
+        GLX_PBUFFER_HEIGHT, viewHeight_,
+        None
+    };
+
+    this->pbuffer = glXCreatePbuffer(display_, fbConfigs[0], pBufferAttribs);
+    XFree(fbConfigs);
+    XSync(display_, False);
+
+	if(!glXMakeContextCurrent(display_, pbuffer, pbuffer, openGLContext)){
+		std::cout << "error with content creation\n";
+	}else{
+		std::cout << "made a context the current context\n";
+	}
+    // glewExperimental = GL_TRUE;
+    // GLenum err = glewInit();
+    // if (err != GLEW_OK) {
+    //   std::cerr << glewGetErrorString(err) << std::endl;
+    //   throw std::runtime_error("Failed to initialize GLEW.");
+    // }
+
+    // std::cout << "GLEW initialized." << std::endl;
 
 
 	#endif
 }
 
 void  PanoramaRenderer::discardContext() {
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	if (FALSE == ::wglMakeCurrent(0, 0))exit(ERROR);
 	if (FALSE == ::wglDeleteContext(_hrc))exit(ERROR);
 	DeleteDC(_hdc_);
