@@ -579,7 +579,7 @@ void FisheyeTrans(double x, double y, double z, double& u, double& v,
 		double xd = x_ * distv;
 		double yd = y_ * distv;
 
-		u = ox + xd * f + xd + b1;
+		u = ox + xd * f + xd * b1;
 		v = oy + yd * f;
 	}
 	else {
@@ -591,7 +591,7 @@ void FisheyeTrans(double x, double y, double z, double& u, double& v,
 		double r = x*x + y*y;
 		double xd = (distv)*x;
 		double yd = (distv)*y;
-		u = ox + xd * f + xd + b1;
+		u = ox + xd * f + xd * b1;
 		v = oy + yd * f;
 	}
 }
