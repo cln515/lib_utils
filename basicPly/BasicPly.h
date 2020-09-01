@@ -36,7 +36,7 @@ protected:
 	float* reflectance;
 	unsigned int* faces;
 	unsigned char* rgba;//{r,g,b,a,r,g,b,a,...}
-#if defined(WIN32) || defined(WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	__int64 facenum;
 	__int64 vertexnum;
 #elif defined(__unix__)

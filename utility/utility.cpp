@@ -270,7 +270,7 @@ void FAROColorPtx2ply(string in_ptxFn, string out_plyFn) {
 			vert.push_back(arrayPoint[idx].x);
 			vert.push_back(arrayPoint[idx].y);
 			vert.push_back(arrayPoint[idx].z);
-			vertIdx.push_back(idx);//‘½•ª‚±‚±ƒoƒO
+			vertIdx.push_back(idx);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½O
 			refVect.push_back(reflectanceArray[idx]);
 		}
 	}
@@ -337,7 +337,7 @@ void timeSequencePtx2ply(string in_ptxFn,string out_plyFn){
 			vert.push_back(arrayPoint[idx].x);
 			vert.push_back(arrayPoint[idx].y);
 			vert.push_back(arrayPoint[idx].z);
-			vertIdx.push_back(idx);//‘½•ª‚±‚±ƒoƒO
+			vertIdx.push_back(idx);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½O
 			refVect.push_back(reflectanceArray[idx]);
 		}
 	}
@@ -645,6 +645,7 @@ void rev_omniTrans(double phi, double theta, Vector3d& ret) {
 }
 
 bool makeFolder(string folderPath){
+std::cout << "create "+ folderPath <<std::endl;
 #if defined(WIN32) || defined(WIN64)
 	if (MakeSureDirectoryPathExists(folderPath.c_str())) {
 	    cout<<"succeeded."<<endl;
@@ -653,6 +654,12 @@ bool makeFolder(string folderPath){
 		cout<<"failed"<<endl;
 		return false;
 	}
+#elif defined(__unix__)
+
+	std::string folderPath_make = folderPath.substr(0,folderPath.find_last_of('/'));
+//	std::cout<<folderPath_make;
+	std::string cmd ="mkdir -p "+ folderPath_make;
+	system(cmd.c_str());
 #endif
 }
 
