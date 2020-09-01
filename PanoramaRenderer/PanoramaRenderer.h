@@ -7,8 +7,7 @@
 #include <iostream>
 #include"Eigen/Eigen"
 #include"Eigen/Core"
-#include<GL/gl.h>
-#include<GL/glu.h>
+
 #if defined(WIN32) || defined(WIN64)
 // Windows 32-bit and 64-bit
 #include <Windows.h>
@@ -23,7 +22,8 @@
 
 
 #endif
-//#include<gl/glew.h>
+#include<GL/gl.h>
+#include<GL/glu.h>
 
 
 
