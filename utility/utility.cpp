@@ -367,6 +367,15 @@ void mat2axis_angle(Matrix3d m, Vector3d& retv, double& angle) {
 	angle = acos((m(0, 0) + m(1, 1) + m(2, 2) - 1) / 2);
 }
 
+
+Matrix3d axis_angle2mat(Vector3d axis, double angle) {
+	Matrix3d skewMat;
+	skewMat << 0, -axis(2), axis(1),
+		axis(2), 0, -axis(0),
+		-axis(1), axis(0), 0;
+	return Matrix3d::Identity() + sin(angle)*skewMat + (1 - cos(angle))*skewMat*skewMat;
+}
+
 Matrix4d getMatrixFlomPly(string fn){
 	ifstream ifs(fn,ios::binary);
 	string line;
