@@ -483,7 +483,7 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 	GLint maj_v,min_v;
 	//glGetIntegerv(GL_MAJOR_VERSION, &maj_v);
 	//glGetIntegerv(GL_MINOR_VERSION, &min_v);
-    std::cout << maj_v<<","<<min_v << std::endl;
+    //std::cout << maj_v<<","<<min_v << std::endl;
 	if (type == PERSPECTIVE) {
 		InitPers(viewWidth_, viewHeight_, znear, depthResolution, intrinsic);
 		glGetIntegerv(GL_VIEWPORT, view);
