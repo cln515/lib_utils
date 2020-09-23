@@ -727,7 +727,7 @@ string getTimeStamp() {
 
 void HSVAngle2Color(double radangle, unsigned char* rgb) {
 	double pi_sixtydig = M_PI / 3;
-	double angle = ((radangle / (M_PI * 2)) - (int)(radangle / (M_PI * 2)))*(M_PI * 2);
+	double angle = ((radangle / (M_PI * 2)) - floor((radangle / (M_PI * 2))))*(M_PI * 2);
 	if (angle >= 0 && angle < pi_sixtydig) {
 		double val = (angle - pi_sixtydig * 0) / pi_sixtydig;
 		rgb[0] = 255;
