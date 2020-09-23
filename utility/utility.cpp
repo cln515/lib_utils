@@ -576,6 +576,11 @@ void FisheyeTrans(double x, double y, double z, double& u, double& v,
 	if (z != 0) {
 		double x0 = x / z;
 		double y0 = y / z;
+		if (x0 == 0 && y0 == 0) {
+			u = ox;
+			v = oy;
+			return;
+		}
 		double r0 = sqrt(x0*x0 + y0 * y0);
 		if (z < 0)r0 = -r0;
 		double theta = atan(r0);
