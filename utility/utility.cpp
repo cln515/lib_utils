@@ -579,7 +579,7 @@ double FisheyeTrans(double x, double y, double z, double& u, double& v,
 		if (x0 == 0 && y0 == 0) {
 			u = ox;
 			v = oy;
-			return;
+			return 0;
 		}
 		double r0 = sqrt(x0*x0 + y0 * y0);
 		if (z < 0)r0 = -r0;
