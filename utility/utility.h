@@ -111,6 +111,7 @@ Matrix4d _6dof2m(_6dof dof);
 _6dof m2_6dof(Matrix4d& m);
 void _6dof2trans_quaternion(_6dof dof, Eigen::Vector3d& trans, Eigen::Vector4d& quaternion);
 void mat2axis_angle(Matrix3d m, Vector3d& retv, double& angle);
+Matrix3d axis_angle2mat(Vector3d axis, double anglerad);
 
 Matrix4d getMatrixFlomPly(string fn);
 

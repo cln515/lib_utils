@@ -367,6 +367,15 @@ void mat2axis_angle(Matrix3d m, Vector3d& retv, double& angle) {
 	angle = acos((m(0, 0) + m(1, 1) + m(2, 2) - 1) / 2);
 }
 
+
+Matrix3d axis_angle2mat(Vector3d axis, double angle) {
+	Matrix3d skewMat;
+	skewMat << 0, -axis(2), axis(1),
+		axis(2), 0, -axis(0),
+		-axis(1), axis(0), 0;
+	return Matrix3d::Identity() + sin(angle)*skewMat + (1 - cos(angle))*skewMat*skewMat;
+}
+
 Matrix4d getMatrixFlomPly(string fn){
 	ifstream ifs(fn,ios::binary);
 	string line;
@@ -567,6 +576,11 @@ double FisheyeTrans(double x, double y, double z, double& u, double& v,
 	if (z != 0) {
 		double x0 = x / z;
 		double y0 = y / z;
+		if (x0 == 0 && y0 == 0) {
+			u = ox;
+			v = oy;
+			return;
+		}
 		double r0 = sqrt(x0*x0 + y0 * y0);
 		if (z < 0)r0 = -r0;
 		double theta = atan(r0);
@@ -721,7 +735,7 @@ string getTimeStamp() {
 
 void HSVAngle2Color(double radangle, unsigned char* rgb) {
 	double pi_sixtydig = M_PI / 3;
-	double angle = ((radangle / (M_PI * 2)) - (int)(radangle / (M_PI * 2)))*(M_PI * 2);
+	double angle = ((radangle / (M_PI * 2)) - floor((radangle / (M_PI * 2))))*(M_PI * 2);
 	if (angle >= 0 && angle < pi_sixtydig) {
 		double val = (angle - pi_sixtydig * 0) / pi_sixtydig;
 		rgb[0] = 255;
