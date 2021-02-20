@@ -111,6 +111,7 @@ Matrix4d _6dof2m(_6dof dof);
 _6dof m2_6dof(Matrix4d& m);
 void _6dof2trans_quaternion(_6dof dof, Eigen::Vector3d& trans, Eigen::Vector4d& quaternion);
 void mat2axis_angle(Matrix3d m, Vector3d& retv, double& angle);
+Matrix3d axis_angle2mat(Vector3d axis, double anglerad);
 
 Matrix4d getMatrixFlomPly(string fn);
 
@@ -152,7 +153,7 @@ double get_point2lineDistance(Vector3d& p1,Vector3d& v1,Vector3d& p2);
 string getTimeStamp();
 
 void HSVAngle2Color(double radangle, unsigned char* rgb);
-void FisheyeTrans(double x, double y, double z, double& u, double& v,
+double FisheyeTrans(double x, double y, double z, double& u, double& v,
 	double ox, double oy, double f, double k1, double k2=0, double k3=0, double b1=0);
 void FisheyeTransCV(double x, double y, double z, double& u, double& v,
 	double cx, double cy, double fx, double fy, double k1, double k2 = 0, double k3 = 0, double k4 = 0);
