@@ -70,6 +70,7 @@ protected:
 	render_type type;
 
 	double intrinsic[4];
+	double lensParam[8];
 	double znear;
 public:
 
@@ -124,7 +125,11 @@ public:
 		intrinsic[2] = fx;
 		intrinsic[3] = fy;
 	};
-	void setFisheye() { type = FISHEYE; };
+	void setFisheye(double* lensParam_) { 
+		type = FISHEYE; 
+		for (int i = 0; i < 8;i++)lensParam[i] = lensParam_[i];
+
+	};
 	void getPersRender(double& cx, double& cy, double& fx, double& fy, double& zn, double& zf) {
 		cx = intrinsic[0];
 		cy = intrinsic[1];

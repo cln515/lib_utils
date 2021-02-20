@@ -17,7 +17,7 @@ void display(float*& vertex, unsigned int*& face, float*& reflectance, int meshN
 void displayrgb(float*& vertex, unsigned int*& face, unsigned char*& rgba, int meshNum, int vertNum);
 void display_points(float*& vertex, unsigned int*& face, float*& reflectance, int meshNum, int vertNum);
 void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Vector3d& center, Matrix3d& rotMatrix);
-void fisheyeTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParameter);
+void fisheyeTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParameter,double* lensParam);
 void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParameter);
 void Init(int viewWidth, int viewHeight, double depthResolution);
 void InitPers(int viewWidth, int viewHeight, double znear, double depthResolution, double* intrinsic);
@@ -399,7 +399,7 @@ void PanoramaRenderer::render(Matrix4d cameraParam) {
 				Vector3d pp;
 				pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
 
-				fisheyeTrans_renderer(tp, pp, cameraParam);
+				fisheyeTrans_renderer(tp, pp, cameraParam,lensParam);
 				trsVert[j * 3] = (float)tp(0, 0);
 				trsVert[j * 3 + 1] = (float)tp(1, 0);
 				trsVert[j * 3 + 2] = (float)tp(2, 0);
@@ -483,7 +483,7 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 	GLint maj_v,min_v;
 	//glGetIntegerv(GL_MAJOR_VERSION, &maj_v);
 	//glGetIntegerv(GL_MINOR_VERSION, &min_v);
-    std::cout << maj_v<<","<<min_v << std::endl;
+    //std::cout << maj_v<<","<<min_v << std::endl;
 	if (type == PERSPECTIVE) {
 		InitPers(viewWidth_, viewHeight_, znear, depthResolution, intrinsic);
 		glGetIntegerv(GL_VIEWPORT, view);
@@ -542,14 +542,14 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 				Vector3d pp;
 				pp << vertexp[j * 3], vertexp[j * 3 + 1], vertexp[j * 3 + 2];
 
-				fisheyeTrans_renderer(tp, pp, cameraParam);
+				fisheyeTrans_renderer(tp, pp, cameraParam,lensParam);
 				trsVert[j * 3] = (float)tp(0, 0);
 				trsVert[j * 3 + 1] = (float)tp(1, 0);
 				trsVert[j * 3 + 2] = (float)tp(2, 0);
-				//	cout<<tp<<","<<endl;
+				//	cout<<tp.transpose()<<","<<endl;
 			}
 			glBegin(GL_TRIANGLES);
-			double thresh = (M_PI * 3 / 4)*(M_PI * 3 / 4);
+			double thresh = (viewWidth_/2)*(viewHeight_ / 2);
 			for (int j = 0; j < meshNumArray[i]; j++) {
 
 				int index1 = facePointers[i][j * 3];
@@ -557,10 +557,13 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 				int index3 = facePointers[i][j * 3 + 2];
 
 				double r1, r2, r3;
-				r1 = trsVert[index1 * 3] * trsVert[index1 * 3] + trsVert[index1 * 3 + 1] * trsVert[index1 * 3 + 1];
-				r2 = trsVert[index2 * 3] * trsVert[index2 * 3] + trsVert[index2 * 3 + 1] * trsVert[index2 * 3 + 1];
-				r3 = trsVert[index3 * 3] * trsVert[index3 * 3] + trsVert[index3 * 3 + 1] * trsVert[index3 * 3 + 1];
+				r1 = (trsVert[index1 * 3] - lensParam[0]) * (trsVert[index1 * 3] - lensParam[0]) + (trsVert[index1 * 3 + 1] - lensParam[1]) * (trsVert[index1 * 3 + 1] - lensParam[1]);
+				r2 = (trsVert[index2 * 3] - lensParam[0]) * (trsVert[index2 * 3] - lensParam[0]) + (trsVert[index2 * 3 + 1] - lensParam[1]) * (trsVert[index2 * 3 + 1] - lensParam[1]);
+				r3 = (trsVert[index3 * 3] - lensParam[0]) * (trsVert[index3 * 3] - lensParam[0]) + (trsVert[index3 * 3 + 1] - lensParam[1]) * (trsVert[index3 * 3 + 1] - lensParam[1]);
+				
 				if (r1 > thresh || r2 > thresh && r3 > thresh)continue;
+				if (trsVert[index1 * 3 + 2]<0.2 || trsVert[index2 * 3 + 2] < 0.2 || trsVert[index3 * 3 + 2] < 0.2)continue;
+
 				glColor3ub(rgbaPointers[i][index1 * 4], rgbaPointers[i][index1 * 4 + 1], rgbaPointers[i][index1 * 4 + 2]);
 				glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
 				glColor3ub(rgbaPointers[i][index2 * 4], rgbaPointers[i][index2 * 4 + 1], rgbaPointers[i][index2 * 4 + 2]);
@@ -1626,28 +1629,71 @@ void sphericalTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParam
 }
 
 #define FOCAL M_PI/2
-void fisheyeTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParameter) {
+void fisheyeTrans_renderer(Vector3d& ret_, Vector3d& pt, Matrix4d& cameraParameter, double* lensParam) {
 	
 	Vector4d pt_;
 	pt_ << pt(0), pt(1), pt(2), 1;
 	Vector4d tp_ = cameraParameter * pt_;
-	Vector3d tp = tp_.block(0, 0, 3, 1);
-	float r = sqrt(tp.dot(tp));
-	float phi = acos(tp(2, 0) / r);//
-	if (isnan(phi)) {
-		if (tp(2, 0) > 0)phi = 0;
-		else phi = PI_VAL;
+	Vector3d tp = tp_.segment(0, 3);
+	double x = tp(0);
+	double y = tp(1);
+	double z = tp(2);
+	double dep = tp.norm();
+	double ox = lensParam[0];
+	double oy = lensParam[1];
+	double f = lensParam[2];
+	double b1 = lensParam[3];
+	double k1 = lensParam[4];	
+	double k2 = lensParam[5];	
+	double k3 = lensParam[6];
+	double k4 = lensParam[7];
+
+	if (z != 0) {
+		double x0 = x / z;
+		double y0 = y / z;
+		if (x0 == 0 && y0 == 0) {
+			ret_ << ox, oy, dep;
+			return;
+		}
+		double r0 = sqrt(x0*x0 + y0 * y0);
+		if (z < 0)r0 = -r0;
+		double theta = atan(r0);
+		if (theta < 0)theta += M_PI;
+		double x_ = x0 / r0 * theta;
+		double y_ = y0 / r0 * theta;
+		double r = sqrt(x_ * x_ + y_ * y_);
+
+		if (theta > M_PI/2) { 
+			k1 = 0;
+			k2 = 0;
+			k3 = 0;
+			k4 = 0;
+		};
+
+		double distv = (1 + k1 * std::pow(theta, 2) + k2 * std::pow(theta, 4) + k3 * std::pow(theta, 6));
+		double xd = x_ * distv;
+		double yd = y_ * distv;
+
+		double u = ox + xd * f + xd * b1;
+		double v = oy + yd * f;
+
+		ret_ << u, v, dep;
+		return;
 	}
-	float x0 = tp(0);
-	float y0 = tp(1);
-	float r0 = sqrt(x0*x0 + y0 * y0);
-	float x0_ = x0 / r0 * phi;
-	float y0_ = y0 / r0 * phi;
-	if (r0 == 0) {
-		x0_ = 0;
-		y0_ = 0;
+	else {
+		double theta = M_PI / 2;
+		double theta2 = theta * theta;
+		double theta4 = theta2 * theta2;
+		double theta6 = theta4 * theta2;
+		double distv = (1 + k1 * theta2 + k2 * theta4 + k3 * theta6);
+		double r = x * x + y * y;
+		double xd = (distv)*x;
+		double yd = (distv)*y;
+		double u = ox + xd * f + xd * b1;
+		double v = oy + yd * f;
+		ret_ << u, v, dep;
+		return;
 	}
-	ret_ <<x0_ ,-y0_  , r;
 }
 
 void Init(int viewWidth,int viewHeight, double depthResolution) {
@@ -1673,11 +1719,11 @@ void InitFE(int viewWidth, int viewHeight, double depthResolution) {
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	//	  gluPerspective(90.0, (double)300/(double)300, 0.1, 100.0); //�������e�@�̎��̐�gluPerspactive(th, w/h, near, far);
-	glOrtho(-PI_VAL/2, PI_VAL/2, -PI_VAL/2, PI_VAL / 2, 0.03, depthResolution);
+	glOrtho(0, viewWidth,  -viewHeight,0 , 0.00, depthResolution);
 	//------------------------------------------------
 	gluLookAt(
-		0.0, 0.0, 0.0, // ���_�̈ʒux,y,z;
-		0.0, 0.0, 1.0,   // ���E�̒��S�ʒu�̎Q�Ɠ_���Wx,y,z
+		0, 0, 0.0, // ���_�̈ʒux,y,z;
+		0,0 , 1.0,   // ���E�̒��S�ʒu�̎Q�Ɠ_���Wx,y,z
 		0.0, -1.0, 0.0);  //���E�̏�����̃x�N�g��x,y,z*/
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	    glFlush();
