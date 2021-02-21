@@ -122,7 +122,7 @@ void evaluation_mnbrak(optimizedVectorFunction* func,VectorXd& axv,VectorXd& bxv
 	double ulim,u,r,q,fu,dum;
 	VectorXd stdVct=bxv-axv;
 	stdVct.normalize();
-	VectorXd origin=bxv;//origin‚ðˆêŽŸŒ³üã‚Ì‰¼‚ÌŒ´“_‚Æ‚µstdVct orientation‚ð³‚Ì•ûŒü‚Æ‚·‚é
+	VectorXd origin=bxv;//originï¿½ï¿½ï¿½êŽŸï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì‰ï¿½ï¿½ÌŒï¿½ï¿½_ï¿½Æ‚ï¿½stdVct orientationï¿½ð³‚Ì•ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½ï¿½ï¿½
 	VectorXd input;
 	double ax[1];
 	double bx[1];
@@ -208,7 +208,7 @@ double brent_method(optimizedVectorFunction* func,VectorXd& ax,VectorXd& bx,Vect
 	double a,b,v,w,x,xm,p,q,r,d,etemp,fu,fv,fw,fx,tol1,tol2,u;
 	double e=0.0;
 	VectorXd stdVct=bx-ax;
-	VectorXd origin=bx;//origin‚ðˆêŽŸŒ³üã‚Ì‰¼‚ÌŒ´“_‚Æ‚µstdVct orientation‚ð³‚Ì•ûŒü‚Æ‚·‚é
+	VectorXd origin=bx;//originï¿½ï¿½ï¿½êŽŸï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì‰ï¿½ï¿½ÌŒï¿½ï¿½_ï¿½Æ‚ï¿½stdVct orientationï¿½ð³‚Ì•ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½ï¿½ï¿½
 	VectorXd input;
 	stdVct.normalize();
 	double axc=sqrt((origin-ax).dot(origin-ax));
@@ -279,7 +279,7 @@ void powellOptimization(optimizedVectorFunction* func,VectorXd& p,int dim,double
 	VectorXd xit;
 	func->evaluateFunction(p,ans);
 	cout<<"init,"<<ans<<endl;
-	VectorXd pt=p,ptt;//‰Šú“_‚ð•Û‘¶‚·‚é
+	VectorXd pt=p,ptt;//ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½Û‘ï¿½ï¿½ï¿½ï¿½ï¿½
 //	cout<<iter<<","<<ans<<","<<p(0)<<","<<p(1)<<","<<p(2)<<","<<p(3)<<","<<p(4)<<","<<p(5)<<endl;
 	for(int iter=0;;iter++){
 		fp=ans;
@@ -299,7 +299,7 @@ void powellOptimization(optimizedVectorFunction* func,VectorXd& p,int dim,double
 				ibig=i;
 			}
 		}
-		if(2.0*fabs(fp-ans)<=dtol*(fabs(fp)+fabs(ans))){//I—¹”»’è
+		if(2.0*fabs(fp-ans)<=dtol*(fabs(fp)+fabs(ans))){//ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			return;
 		}
 		if(iter==ITMAX)return;
