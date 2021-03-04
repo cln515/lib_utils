@@ -153,7 +153,7 @@ double get_point2lineDistance(Vector3d& p1,Vector3d& v1,Vector3d& p2);
 string getTimeStamp();
 
 void HSVAngle2Color(double radangle, unsigned char* rgb);
-void FisheyeTrans(double x, double y, double z, double& u, double& v,
+double FisheyeTrans(double x, double y, double z, double& u, double& v,
 	double ox, double oy, double f, double k1, double k2=0, double k3=0, double b1=0);
 void FisheyeTransCV(double x, double y, double z, double& u, double& v,
 	double cx, double cy, double fx, double fy, double k1, double k2 = 0, double k3 = 0, double k4 = 0);

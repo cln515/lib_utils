@@ -49,6 +49,7 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 }
 
 __int64 PointSequenceLoader::seekByTime(double t) {
+	t = t - ts;
 	__int64 startIdx = 0,endIdx=pointNum-1,centerIdx=startIdx;
 	float dat[5];
 	

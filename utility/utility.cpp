@@ -570,8 +570,8 @@ void omniTrans(double x,double y, double z,double& phi_pix,double& theta_pix,int
 	phi_pix=phi/M_PI*height;
 };
 
-void FisheyeTrans(double x, double y, double z, double& u, double& v,
- double ox,double oy,double f,double k1,double k2,double k3, double b1) {
+double FisheyeTrans(double x, double y, double z, double& u, double& v,
+	double ox, double oy, double f, double k1, double k2, double k3, double b1) {
 
 	if (z != 0) {
 		double x0 = x / z;
@@ -579,7 +579,7 @@ void FisheyeTrans(double x, double y, double z, double& u, double& v,
 		if (x0 == 0 && y0 == 0) {
 			u = ox;
 			v = oy;
-			return;
+			return 0;
 		}
 		double r0 = sqrt(x0*x0 + y0 * y0);
 		if (z < 0)r0 = -r0;
@@ -595,6 +595,8 @@ void FisheyeTrans(double x, double y, double z, double& u, double& v,
 
 		u = ox + xd * f + xd * b1;
 		v = oy + yd * f;
+
+		return theta;
 	}
 	else {
 		double theta = M_PI / 2;
@@ -602,14 +604,15 @@ void FisheyeTrans(double x, double y, double z, double& u, double& v,
 		double theta4 = theta2 * theta2;
 		double theta6 = theta4 * theta2;
 		double distv = (1 + k1 * theta2 + k2 * theta4 + k3 * theta6);
-		double r = x*x + y*y;
+		double r = x * x + y * y;
 		double xd = (distv)*x;
 		double yd = (distv)*y;
 		u = ox + xd * f + xd * b1;
 		v = oy + yd * f;
+		
+		return theta;
 	}
 }
-
 void FisheyeTransCV(double x, double y, double z, double& u, double& v,
 	double cx, double cy, double fx, double fy, double k1, double k2, double k3, double k4) {
 
