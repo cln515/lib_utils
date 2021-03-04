@@ -190,7 +190,7 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 			float fa[5];
 
 			point = invcalib*linePose*calib*point;
-			if (dat[3]>0.05) {
+			if (dat[3]>0.001) {
 				if (point(0, 0) != point(0, 0) || point(1, 0) != point(1, 0) || point(2, 0) != point(2, 0)) {
 
 					continue;
