@@ -26,6 +26,7 @@ bool PointSequenceLoader::getNextPointData(float* dat) {
 		ifs->open(filePathTmp.str(), ios::binary);
 		//if(!ifs_stream->)return false;
 		readed = ifs->read((char*)dat, sizeof(float) * 5).gcount();
+		dat[4] += ts;
 	}
 	return true;
 }
