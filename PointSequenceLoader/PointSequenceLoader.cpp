@@ -26,8 +26,8 @@ bool PointSequenceLoader::getNextPointData(float* dat) {
 		ifs->open(filePathTmp.str(), ios::binary);
 		//if(!ifs_stream->)return false;
 		readed = ifs->read((char*)dat, sizeof(float) * 5).gcount();
-		dat[4] += ts;
 	}
+	dat[4] += ts;
 	return true;
 }
 
@@ -50,7 +50,7 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 }
 
 __int64 PointSequenceLoader::seekByTime(double t) {
-	t = t - ts;
+	
 	__int64 startIdx = 0,endIdx=pointNum-1,centerIdx=startIdx;
 	float dat[5];
 	
