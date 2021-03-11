@@ -39,7 +39,7 @@ public:
 		std::vector<float> pointTimestamp;
 		cv::Mat lastImage;
 		cv::Mat mask;
-		bool bMask;
+		bool bMask = false;
 		_6dof camPose;
 		void* dataptr;
 	};
@@ -99,7 +99,7 @@ public:
 	};
 	void setUpdateFunc(boost::function<void(Status&, Inputs&)>& func) { updateFunc = func; };
 	void setInitializeFunc(boost::function<void( Status&, Inputs&)>& func) { initializeFunc = func; };
-	bool setMask(string workMaskPath);
+	bool setMask(cv::Mat maskimg);
 	Inputs getInput() { return inputs; };
 	Status getStatus() {
 		return stat;

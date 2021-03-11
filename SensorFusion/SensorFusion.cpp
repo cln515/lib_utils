@@ -200,12 +200,9 @@ SensorFusion::Status SensorFusion::update() {
 	return stat;
 };
 
-bool SensorFusion::setMask(string workMaskPath) {
-	stat.mask = cv::imread(workMaskPath, 0);
-	if (stat.mask.cols > 0) {
+bool SensorFusion::setMask(cv::Mat maskimg) {
+
 		stat.bMask = true;
-	//	cv::resize(stat.mask, stat.mask, cv::Size(2048, 1024));
-	}
-	else stat.bMask = false;
+		stat.mask = maskimg;
 	return stat.bMask;
 };
