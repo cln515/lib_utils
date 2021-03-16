@@ -112,7 +112,7 @@ bool PointSequenceLoader::seekByPointIdx(__int64 idx) {
 	return true;
 }
 
-void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTime, _6dof* motion, Matrix4d& calib, int firstFrame, int lastFrame, int skip) {
+void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTime, _6dof* motion, Matrix4d& calib, int firstFrame, int lastFrame, int skip,double refThres) {
 	
 	
 		ifs->close();
@@ -192,7 +192,7 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 			float fa[5];
 
 			point = invcalib*linePose*calib*point;
-			if (dat[3]>0.001) {
+			if (dat[3]>refThres) {
 				if (point(0, 0) != point(0, 0) || point(1, 0) != point(1, 0) || point(2, 0) != point(2, 0)) {
 
 					continue;

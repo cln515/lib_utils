@@ -18,7 +18,7 @@ public:
 	bool getNextPointData(float* dat);
 	bool backPointData();
 	void writePlyReflectance(string filePath, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame);
-	void writePlyReflectance(string filePath, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip);
+	void writePlyReflectance(string filePath, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip, double refThres=0.001);
 	void writePlyReflectance(string filePath, string filePathPreview, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip);
 	void getPCReflectance(double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip, vector<float>& v, vector<float>& rf);
 	void setTimeOffset(double ts_) { ts = ts_; };
