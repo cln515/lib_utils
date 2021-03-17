@@ -22,13 +22,14 @@ public:
 	void writePlyReflectance(string filePath, string filePathPreview, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip);
 	void getPCReflectance(double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, int skip, vector<float>& v, vector<float>& rf);
 	void setTimeOffset(double ts_) { ts = ts_; };
+	
 #if USE_OPENCV
 	void getPCColor(double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame, vector<string>imgFileNameList, vector<float>& v, vector<uchar>& rgba, int skip = 0);
 #endif
 	__int64 seekByTime(double t);
-
-private:
 	bool seekByPointIdx(__int64 idx);
+private:
+
 	std::ifstream* ifs=NULL;
 	__int64 pointNum;
 	int fcnt;
