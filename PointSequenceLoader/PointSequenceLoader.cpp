@@ -129,11 +129,13 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 		vector<float> v;
 		vector<float> rf;
 		vector<float> motp;
+		vector<__int64> idces;
 		int ds = skip + 1;
 		Matrix4d invcalib = calib.inverse();
 		float dat[5];
-		this->seekByTime(motionTime[idx] - 1 / 32.0);
+		__int64 ptidx = this->seekByTime(motionTime[idx] - 1 / 32.0);
 		while (this->getNextPointData(dat)) {
+			ptidx++;
 			if (i%ds != 0) { i++;continue; }
 			i++;
 			double t = dat[4];
@@ -202,6 +204,7 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 				v.push_back(point(1, 0));
 				v.push_back(point(2, 0));
 				rf.push_back(dat[3]);
+				idces.push_back(ptidx-1);
 			}
 		}
 
@@ -209,6 +212,7 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 
 
 
+		std::ofstream ofs2("addIdx.dat",std::ios::binary);
 
 		ofs << "ply" << endl;
 		ofs << "format binary_little_endian 1.0" << endl;
@@ -233,6 +237,7 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 			rgba[0] = rgba[1] = rgba[2] = (unsigned char)(rf.at(i)*256);
 			rgba[3] = 255;
 			ofs.write((char *)rgba, sizeof(unsigned char) * 4);
+			ofs2.write((char*)&(idces.at(i)), sizeof(__int64));
 		}
 		for (int i = 0;i < motp.size()/3;i++) {
 			float fa[4] = { motp.at(i * 3),motp.at(i * 3 + 1),motp.at(i * 3 + 2),1.0 };
@@ -244,6 +249,9 @@ void PointSequenceLoader::writePlyReflectance(string filePath, double* motionTim
 			ofs.write((char *)rgba, sizeof(unsigned char) * 4);
 		}
 		ofs.close();
+		ofs2.close();
+
+
 };
 
 void PointSequenceLoader::writePlyReflectance(string filePath, string filePathPreview, double* motionTime, _6dof* motion, Matrix4d& calib, int firstFrame, int lastFrame, int skip) {
