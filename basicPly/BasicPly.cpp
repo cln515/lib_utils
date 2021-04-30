@@ -104,7 +104,7 @@ bool BasicPly::readPlyFile(vector<string> fileName,int dataNum){
 	for(int i=offset;i<offset+vertex*3;i++){norm_[i]=0;}
 	
 	if(headString(format,"binary_little_endian")){
-		//vertex“Ç‚İ‚İ
+		//vertexï¿½Ç‚İï¿½ï¿½ï¿½
 		
 		while(n<vertex&&!ifs.eof()){
 			float f;
@@ -124,7 +124,7 @@ bool BasicPly::readPlyFile(vector<string> fileName,int dataNum){
 			n++;
 		}
 		n=0;
-		//norm“Ç‚İ‚İ
+		//normï¿½Ç‚İï¿½ï¿½ï¿½
 		while(n<face&&!ifs.eof()){
 			int f;
 			int fa[10];
@@ -152,7 +152,7 @@ bool BasicPly::readPlyFile(vector<string> fileName,int dataNum){
 			n++;
 		}
 	}
-	if(headString(format,"ascii")){//‰i‰“‚É–¢Š®¬, Incompleting Eternally 
+	if(headString(format,"ascii")){//ï¿½iï¿½ï¿½ï¿½É–ï¿½ï¿½ï¿½ï¿½ï¿½, Incompleting Eternally 
 		while(n<vertex&&!ifs.eof()){
 			float f[5];
 				getline(ifs,line);
@@ -174,7 +174,7 @@ bool BasicPly::readPlyFile(vector<string> fileName,int dataNum){
 	}
 	int allVnum=validVertex;
 	validVertex=0;
-	//norm‚Ìƒ`ƒFƒbƒN
+	//normï¿½Ìƒ`ï¿½Fï¿½bï¿½N
 //	for (int i=0;i<allVnum;i++){
 //		if(norm_[i*3]!=0||norm_[i*3+1]!=0||norm_[i*3+2]!=0)validVertex++;
 //	}
@@ -599,7 +599,7 @@ bool BasicPly::readPlyFileRGB(vector<string> fileName,int dataNum){
 	for(int i=offset;i<offset+vertex*3;i++){norm_[i]=0;}
 	
 	if(headString(format,"binary_little_endian")){
-		//vertex“Ç‚İ‚İ
+		//vertexï¿½Ç‚İï¿½ï¿½ï¿½
 		
 		while(n<vertex&&!ifs.eof()){
 			float f;
@@ -628,7 +628,7 @@ bool BasicPly::readPlyFileRGB(vector<string> fileName,int dataNum){
 			n++;
 		}
 		n=0;
-		//norm“Ç‚İ‚İ
+		//normï¿½Ç‚İï¿½ï¿½ï¿½
 		while(n<face&&!ifs.eof()){
 			int f;
 			int fa[10];
@@ -657,7 +657,7 @@ bool BasicPly::readPlyFileRGB(vector<string> fileName,int dataNum){
 			n++;
 		}
 	}
-	if(headString(format,"ascii")){//‰i‰“‚É–¢Š®¬, Incompleting Eternally 
+	if(headString(format,"ascii")){//ï¿½iï¿½ï¿½ï¿½É–ï¿½ï¿½ï¿½ï¿½ï¿½, Incompleting Eternally 
 		while(n<vertex&&!ifs.eof()){
 			float f[5];
 				getline(ifs,line);
@@ -967,7 +967,7 @@ void BasicPly::convertFAROColoredPtx2SpherePly(string inFileName) {
 	//		vert.push_back(arrayPoint[idx].x);
 	//		vert.push_back(arrayPoint[idx].y);
 	//		vert.push_back(arrayPoint[idx].z);
-	//		vertIdx.push_back(idx);//‘½•ª‚±‚±ƒoƒO
+	//		vertIdx.push_back(idx);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½O
 	//		refVect.push_back(reflectanceArray[idx]);
 	//	}
 	//}
@@ -1260,7 +1260,7 @@ void BasicPly::convertFAROColoredPtx2Ply(string inFileName, double threshold) {
 	//		vert.push_back(arrayPoint[idx].x);
 	//		vert.push_back(arrayPoint[idx].y);
 	//		vert.push_back(arrayPoint[idx].z);
-	//		vertIdx.push_back(idx);//‘½•ª‚±‚±ƒoƒO
+	//		vertIdx.push_back(idx);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½O
 	//		refVect.push_back(reflectanceArray[idx]);
 	//	}
 	//}
@@ -1435,7 +1435,7 @@ void BasicPly::convertFAROColoredPtx2Ply(string inFileName, double threshold) {
 	return;
 }
 
-//Œü‚«‚ª‹t‚È‹C‚ª‚µ‚Ä‚«‚½‚¼EEE
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½tï¿½È‹Cï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Eï¿½Eï¿½E
 POINT_3D getNorm(POINT_3D p1,POINT_3D p2,POINT_3D p3){
 	double v1x=p2.x-p1.x,v1y=p2.y-p1.y,v1z=p2.z-p1.z,
 		v2x=p3.x-p2.x,v2y=p3.y-p2.y,v2z=p3.z-p2.z;
@@ -1551,7 +1551,7 @@ void BasicPly::removeNoMeshPoints() {
 		newv[cnt * 3 + 1] = verteces[in_idx * 3 + 1];
 		newv[cnt * 3 + 2] = verteces[in_idx * 3 + 2];
 		newRef[cnt] = reflectance[in_idx];
-		idxConv.insert(IDXMAP::value_type::pair(in_idx, cnt));
+		idxConv.insert(std::make_pair(in_idx, cnt));
 		cnt++;
 	}
 	for (int i = 0; i < facenum; i++) {
@@ -1587,7 +1587,8 @@ void BasicPly::removeZeroPoints() {
 		newv[cnt * 3 + 1] = verteces[in_idx * 3 + 1];
 		newv[cnt * 3 + 2] = verteces[in_idx * 3 + 2];
 		newRef[cnt] = reflectance[in_idx];
-		idxConv.insert(IDXMAP::value_type::pair(in_idx, cnt));
+		;
+		idxConv.insert(std::make_pair(in_idx, cnt));
 		cnt++;
 	}
 	for (int i = 0; i < facenum; i++) {
