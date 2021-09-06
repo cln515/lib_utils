@@ -548,30 +548,47 @@ void PanoramaRenderer::renderColor(Matrix4d& cameraParam) {
 				trsVert[j * 3 + 2] = (float)tp(2, 0);
 				//	cout<<tp.transpose()<<","<<endl;
 			}
-			glBegin(GL_TRIANGLES);
-			double thresh = (viewWidth_/2)*(viewHeight_ / 2);
-			for (int j = 0; j < meshNumArray[i]; j++) {
+			if (false) {//mesh rendering
+				glBegin(GL_TRIANGLES);
+				double thresh = (viewWidth_ / 2)*(viewHeight_ / 2);
+				for (int j = 0; j < meshNumArray[i]; j++) {
 
-				int index1 = facePointers[i][j * 3];
-				int index2 = facePointers[i][j * 3 + 1];
-				int index3 = facePointers[i][j * 3 + 2];
+					int index1 = facePointers[i][j * 3];
+					int index2 = facePointers[i][j * 3 + 1];
+					int index3 = facePointers[i][j * 3 + 2];
 
-				double r1, r2, r3;
-				r1 = (trsVert[index1 * 3] - lensParam[0]) * (trsVert[index1 * 3] - lensParam[0]) + (trsVert[index1 * 3 + 1] - lensParam[1]) * (trsVert[index1 * 3 + 1] - lensParam[1]);
-				r2 = (trsVert[index2 * 3] - lensParam[0]) * (trsVert[index2 * 3] - lensParam[0]) + (trsVert[index2 * 3 + 1] - lensParam[1]) * (trsVert[index2 * 3 + 1] - lensParam[1]);
-				r3 = (trsVert[index3 * 3] - lensParam[0]) * (trsVert[index3 * 3] - lensParam[0]) + (trsVert[index3 * 3 + 1] - lensParam[1]) * (trsVert[index3 * 3 + 1] - lensParam[1]);
-				
-				if (r1 > thresh || r2 > thresh && r3 > thresh)continue;
-				if (trsVert[index1 * 3 + 2]<0.2 || trsVert[index2 * 3 + 2] < 0.2 || trsVert[index3 * 3 + 2] < 0.2)continue;
+					double r1, r2, r3;
+					r1 = (trsVert[index1 * 3] - lensParam[0]) * (trsVert[index1 * 3] - lensParam[0]) + (trsVert[index1 * 3 + 1] - lensParam[1]) * (trsVert[index1 * 3 + 1] - lensParam[1]);
+					r2 = (trsVert[index2 * 3] - lensParam[0]) * (trsVert[index2 * 3] - lensParam[0]) + (trsVert[index2 * 3 + 1] - lensParam[1]) * (trsVert[index2 * 3 + 1] - lensParam[1]);
+					r3 = (trsVert[index3 * 3] - lensParam[0]) * (trsVert[index3 * 3] - lensParam[0]) + (trsVert[index3 * 3 + 1] - lensParam[1]) * (trsVert[index3 * 3 + 1] - lensParam[1]);
 
-				glColor3ub(rgbaPointers[i][index1 * 4], rgbaPointers[i][index1 * 4 + 1], rgbaPointers[i][index1 * 4 + 2]);
-				glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
-				glColor3ub(rgbaPointers[i][index2 * 4], rgbaPointers[i][index2 * 4 + 1], rgbaPointers[i][index2 * 4 + 2]);
-				glVertex3f(trsVert[index2 * 3], trsVert[index2 * 3 + 1], trsVert[index2 * 3 + 2]);
-				glColor3ub(rgbaPointers[i][index3 * 4], rgbaPointers[i][index3 * 4 + 1], rgbaPointers[i][index3 * 4 + 2]);
-				glVertex3f(trsVert[index3 * 3], trsVert[index3 * 3 + 1], trsVert[index3 * 3 + 2]);
+					if (r1 > thresh || r2 > thresh && r3 > thresh)continue;
+					if (trsVert[index1 * 3 + 2] < 0.2 || trsVert[index2 * 3 + 2] < 0.2 || trsVert[index3 * 3 + 2] < 0.2)continue;
+
+					glColor3ub(rgbaPointers[i][index1 * 4], rgbaPointers[i][index1 * 4 + 1], rgbaPointers[i][index1 * 4 + 2]);
+					glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
+					glColor3ub(rgbaPointers[i][index2 * 4], rgbaPointers[i][index2 * 4 + 1], rgbaPointers[i][index2 * 4 + 2]);
+					glVertex3f(trsVert[index2 * 3], trsVert[index2 * 3 + 1], trsVert[index2 * 3 + 2]);
+					glColor3ub(rgbaPointers[i][index3 * 4], rgbaPointers[i][index3 * 4 + 1], rgbaPointers[i][index3 * 4 + 2]);
+					glVertex3f(trsVert[index3 * 3], trsVert[index3 * 3 + 1], trsVert[index3 * 3 + 2]);
+				}
+				glEnd();
+			}else{//dot rendering
+				std::cout << "nekonote" << vtNumArray[i] << std::endl;
+				glBegin(GL_POINTS);
+				double thresh = (viewWidth_ / 2)*(viewHeight_ / 2);
+				for (int j = 0; j < vtNumArray[i]; j++) {
+
+					int index1 = j;
+					glColor3ub(rgbaPointers[i][index1 * 4], rgbaPointers[i][index1 * 4 + 1], rgbaPointers[i][index1 * 4 + 2]);
+					glVertex3f(trsVert[index1 * 3], trsVert[index1 * 3 + 1], trsVert[index1 * 3 + 2]);
+
+				}
+				glEnd();
 			}
-			glEnd();
+
+
+
 
 
 //test
