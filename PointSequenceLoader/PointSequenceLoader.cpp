@@ -13,6 +13,18 @@ void PointSequenceLoader::loadPointStream(std::string filePath)
 	bStream = true;
 }
 
+void PointSequenceLoader::loadPointStream(std::string filePath,long long vnum)
+{
+	if (ifs != NULL)ifs->close();
+	ifs = new std::ifstream(filePath + ".dat", std::ios::binary);
+	pointNum = vnum;
+	std::cout << pointNum << std::endl;
+	fcnt = 0;
+	baseFilePath = filePath;
+	bStream = true;
+}
+
+
 bool PointSequenceLoader::getNextPointData(float* dat) {
 	size_t readed;
 	//dat = (float*)malloc(sizeof(float) * 5);

@@ -122,6 +122,20 @@ void SensorFusion::setPointCloud(std::string folder) {
 	inputs.psl->loadPointStream(pointFileBase);
 }
 
+void SensorFusion::setPointCloud(std::string folder,long long vnum) {
+	std::string pointFileBase = folder;
+	std::string pointFileFirst = folder + ".dat";
+
+	if (!PathFileExistsA(pointFileFirst.c_str())) {
+		std::string errorLog = pointFileFirst + " cannot be found!\n";
+		cout << errorLog << endl;
+		return;
+	}
+	//load image file name list
+	inputs.psl = new PointSequenceLoader();
+	inputs.psl->loadPointStream(pointFileBase, vnum);
+}
+
 void SensorFusion::setImage(std::string folder,std::string prefix) {
 	inputs.imgFileNameList.clear();
 	cout << "short" << endl;
@@ -174,6 +188,17 @@ void SensorFusion::setImage(std::string folder,std::string prefix) {
 	ifs.read((char*)inputs.imTimeStamp, imageNumber * sizeof(double));
 
 	ifs.close();
+}
+
+void SensorFusion::setImage2(nlohmann::json conf) {
+	//load image file name list
+	inputs.imgFileNameList = conf["camera_list"].get<std::vector<std::string>>();
+
+	//load time stamp (image)
+	std::vector<double> imts = conf["camera_ts"].get<std::vector<double>>();
+	inputs.imTimeStamp = (double*)malloc(imts.size() * sizeof(double));
+	memcpy((char*)inputs.imTimeStamp,imts.data(), imts.size() * sizeof(double));
+	
 }
 
 

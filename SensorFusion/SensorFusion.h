@@ -21,6 +21,7 @@
 
 #include <utility\utility.h>
 #include <PointSequenceLoader\PointSequenceLoader.h>
+#include <nlohmann\json.hpp>
 
 using namespace Eigen;
 
@@ -57,8 +58,9 @@ public:
 	Inputs setFolder(std::string workFolder, std::string extCparaFile);
 
 	void setPointCloud(std::string pointCloudSequenceBase);
+	void setPointCloud(std::string pointCloudSequenceBase,long long vnum);
 	void setImage(std::string pointCloudFolder, std::string prefix);
-
+	void setImage2(nlohmann::json conf);
 
 	Status initialize(Status init);
 	Status update();
