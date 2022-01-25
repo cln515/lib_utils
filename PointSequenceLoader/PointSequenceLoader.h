@@ -15,6 +15,7 @@
 class PointSequenceLoader {
 public:
 	void loadPointStream(std::string filePath);
+	void loadPointStream(std::string filePath,long long vnum);
 	bool getNextPointData(float* dat);
 	bool backPointData();
 	void writePlyReflectance(string filePath, double* timeList, _6dof* motionData, Matrix4d& calib, int firstFrame, int lastFrame);
